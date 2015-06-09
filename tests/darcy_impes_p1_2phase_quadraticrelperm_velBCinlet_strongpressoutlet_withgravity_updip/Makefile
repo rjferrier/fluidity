@@ -4,12 +4,10 @@ input: clean
 	cp $(FLUIDITYPATH)/tests/darcy_impes_common/mesh_data/line_*.msh .
 	cp $(FLUIDITYPATH)/tests/darcy_impes_common/mesh_data/square_*.msh .
 	cp $(FLUIDITYPATH)/tests/darcy_impes_common/mesh_data/cube_*.msh .
+	# cp $(FLUIDITYPATH)/tests/darcy_impes_common/mesh_data/template_*.geo .
+	# python script.py pre run post
 
 clean:
-	rm -f *.ele
-	rm -f *.node
-	rm -f *.bound
-	rm -f *.edge
 	rm -f *.face
 	rm -f *.vtu 
 	rm -f *.pvtu 
