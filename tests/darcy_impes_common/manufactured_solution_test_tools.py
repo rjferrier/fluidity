@@ -69,6 +69,8 @@ class Parameterisation:
       
       # dictionary entries
       self.mesh_format = 'gmsh'
+      self.inlet_ID = '1'
+      self.outlet_ID = '2'
       if self.dim==1:
          # for collapsing inappropriate wall BCs
          self.begin_rm_if_1D = '<!--'
@@ -79,19 +81,13 @@ class Parameterisation:
          
       # more dictionary entries
       if self.dim==1:
-         self.outlet_ID = '2'
-         self.inlet_ID = '1'
          self.wall_IDs = ''
          self.wall_num = '0'
       elif self.dim==2:
-         self.outlet_ID = '12'
-         self.inlet_ID = '14'
-         self.wall_IDs = '11 13'
+         self.wall_IDs = '3 4'
          self.wall_num = '2'
       elif self.dim==3:
-         self.outlet_ID = '32'
-         self.inlet_ID = '30'
-         self.wall_IDs = '28 29 31 33'
+         self.wall_IDs = '3 4 5 6'
          self.wall_num = '4'
 
 

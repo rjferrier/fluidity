@@ -1,31 +1,31 @@
 lx = $DOMAIN_LENGTH_X;
 ly = $DOMAIN_LENGTH_Y;
 lz = $DOMAIN_LENGTH_Z;
-el_sz = $EL_SIZE_X;
+dx = $EL_SIZE_X;
 sqrt2 = 1.4142135623730951;
 
-Point(1) = {  0,  0,  0, el_sz};
-Point(2) = { lx,  0,  0, el_sz};
-Point(3) = { lx, ly,  0, el_sz};
-Point(4) = {  0, ly,  0, el_sz};
-Point(5) = {  0,  0, lz, el_sz};
-Point(6) = { lx,  0, lz, el_sz};
-Point(7) = { lx, ly, lz, el_sz};
-Point(8) = {  0, ly, lz, el_sz};
+Point(1) = {  0,  0,  0, dx};
+Point(2) = { lx,  0,  0, dx};
+Point(3) = { lx, ly,  0, dx};
+Point(4) = {  0, ly,  0, dx};
+Point(5) = {  0,  0, lz, dx};
+Point(6) = { lx,  0, lz, dx};
+Point(7) = { lx, ly, lz, dx};
+Point(8) = {  0, ly, lz, dx};
 
-Point(11) = {  lx/2,  -lx,  0, el_sz};
-Point(12) = { lx+ly, ly/2,  0, el_sz};
-Point(13) = {  lx/2,    0,  0, el_sz};
-Point(14) = {    lx, ly/2,  0, el_sz};
-Point(15) = {  lx/2,  -lx, lx, el_sz};
-Point(16) = { lx+ly, ly/2, lx, el_sz};
-Point(17) = {  lx/2,    0, lx, el_sz};
-Point(18) = {    lx, ly/2, lx, el_sz};
+Point(11) = {  lx/2,  -lx,  0, dx};
+Point(12) = { lx+ly, ly/2,  0, dx};
+Point(13) = {  lx/2,    0,  0, dx};
+Point(14) = {    lx, ly/2,  0, dx};
+Point(15) = {  lx/2,  -lx, lx, dx};
+Point(16) = { lx+ly, ly/2, lx, dx};
+Point(17) = {  lx/2,    0, lx, dx};
+Point(18) = {    lx, ly/2, lx, dx};
 
-Point(21) = {   -lz/sqrt2,    lz/sqrt2, lz/2, el_sz};
-Point(22) = { lx-lz/sqrt2,    lz/sqrt2, lz/2, el_sz};
-Point(23) = { lx-lz/sqrt2, ly+lz/sqrt2, lz/2, el_sz};
-Point(24) = {   -lz/sqrt2, ly+lz/sqrt2, lz/2, el_sz};
+Point(21) = {   -lz/sqrt2,    lz/sqrt2, lz/2, dx};
+Point(22) = { lx-lz/sqrt2,    lz/sqrt2, lz/2, dx};
+Point(23) = { lx-lz/sqrt2, ly+lz/sqrt2, lz/2, dx};
+Point(24) = {   -lz/sqrt2, ly+lz/sqrt2, lz/2, dx};
 
 Circle(1) = {1, 11, 2};
 Circle(2) = {2, 12, 3};
@@ -54,13 +54,13 @@ Ruled Surface(24) = {24};
 Ruled Surface(25) = {25};
 Ruled Surface(26) = {26};
 
-Physical Surface(28) = {25};
-Physical Surface(29) = {26};
-Physical Surface(30) = {21};
-Physical Surface(31) = {22};
-Physical Surface(32) = {23};
-Physical Surface(33) = {24};
-
 Surface Loop(34) = {26, 24, 25, 22, 23, 21};
 Volume(1) = {34};
-Physical Volume(34) = {1};
+
+Physical Surface(1) = {24};	// xmin
+Physical Surface(2) = {23};	// xmax
+Physical Surface(3) = {25};	// ymin
+Physical Surface(4) = {26};	// ymax
+Physical Surface(5) = {21};	// zmin
+Physical Surface(6) = {22};	// zmax
+Physical Volume(7) = {1};

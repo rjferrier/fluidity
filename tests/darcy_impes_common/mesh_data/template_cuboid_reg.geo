@@ -4,8 +4,9 @@ lz = $DOMAIN_LENGTH_Z;
 nx = $EL_NUM_X;
 ny = $EL_NUM_Y;
 nz = $EL_NUM_Z;
+dx = $EL_SIZE_X;
 
-Point(1) = {0, 0, 0, 0.1};
+Point(1) = {0, 0, 0, dx};
 Extrude {lx, 0, 0} {
   Point{1}; Layers{nx}; 
 }
@@ -16,11 +17,11 @@ Extrude {0, ly, 0} {
   Surface{5}; Layers{ny};
 }
 
-Physical Surface(28) = {5};
-Physical Surface(29) = {27};
-Physical Surface(30) = {26};
-Physical Surface(31) = {22};
-Physical Surface(32) = {18};
-Physical Surface(33) = {14};
-Physical Volume(34) = {1};
+Physical Surface(1) = {26};	// xmin
+Physical Surface(2) = {18};	// xmax
+Physical Surface(3) = {5};	// ymin
+Physical Surface(4) = {27};	// ymax
+Physical Surface(5) = {22};	// zmax
+Physical Surface(6) = {14};	// zmin
+Physical Volume(7) = {1};
 
