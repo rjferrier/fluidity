@@ -445,7 +445,7 @@
         <do_not_recalculate/>
       </prescribed>
     </scalar_field>
-    <scalar_field name="AnalyticSaturationError">
+    <scalar_field name="SaturationAbsError">
       <diagnostic>
         <mesh name="PressureMesh"/>
         <algorithm source_field_2_type="scalar" name="scalar_difference" source_field_1_name="Saturation" source_field_2_name="LinearInterpolatedAnalyticalSaturationSolution" material_phase_support="single" source_field_1_type="scalar">

@@ -5,9 +5,10 @@ import numpy
 import glob
 
 from options_iteration import freeze
+from fluidity_tools import stat_parser
 
         
-## DRIVERS
+## PUBLIC FUNCTIONS
 
 def smap(description, functor, options_tree):
     "Serial processing"
@@ -18,21 +19,50 @@ def smap(description, functor, options_tree):
     functor.teardown()
 
     
-def pmap(description, functor, options_tree, default_nproc=1, in_reverse=True):
+def pmap(description, functor, options_tree, default_nprocs=1, in_reverse=True):
     "Parallel processing"
-    nproc = os.getenv('NPROC')
-    if not nproc:
-        nproc = default_nproc
+    nprocs = os.getenv('NPROC')
+    if not nprocs:
+        nprocs = default_nprocs
     functor.check_processing(True)
     functor.setup()
-    p = multiprocessing.Pool(nproc)
+    p = multiprocessing.Pool(nprocs)
     options_dicts = options_tree.collapse()
     if in_reverse:
         options_dicts.reverse()
-    print '\n{} with {} processor(s)'.format(description, nproc)
+    print '\n{} with {} processor(s)'.format(description, nprocs)
     p.map(functor, freeze(options_dicts))
     p.close()
     functor.teardown()
+
+    
+def find(report_filename, result_name, metric_name):
+    """
+    Opens and searches report_filename and returns the value associated
+    with result_name and metric_name.
+    """
+    with open(report_filename, "r") as f:
+        report.seek(0)
+        v = numpy.nan
+        # loop over lines
+        for line in report:
+            if not line.strip(): continue
+            words = line.split()
+            # loop over words in the line
+            for i, w in enumerate(words):
+                if i == 0 and w != result_name:
+                    # not the right result name, so return to looping
+                    # over the lines
+                    break
+                if metric_name in w:
+                    # found metric_name
+                    break
+            if i > 0 and i < len(words) - 1:
+                # if we found the right metric name, assume the metric
+                # value is represented by the very next word
+                v = float(words[i+1])
+                break
+    return v
 
 
 ## HELPERS
@@ -57,6 +87,11 @@ class FileNotFound(Failure):
 ## FUNCTOR BASE CLASSES
 
 class Functor:
+    """
+    Do not subclass me; subclass SerialFunctor or ParallelFunctor
+    instead.
+    """
+
     def setup(self):
         "Code to be executed before iteration"
         pass
@@ -89,10 +124,11 @@ class Functor:
         if input_filename:
             if not os.path.isfile(input_filename):
                 raise FileNotFound(input_filename)
-
             
         
 class SerialFunctor(Functor):
+    "Subclass me."
+
     @staticmethod
     def check_processing(in_parallel):
         class ProcessingError(Exception):
@@ -116,6 +152,7 @@ class SerialFunctor(Functor):
                     sep = ' -- '
             else:
                 sep = ''
+                msg = msg.replace('\n', '\n' + options.indent())
             print options.str(naming_keys, formatter='tree') + sep + msg
         else:
             if msg:
@@ -123,6 +160,8 @@ class SerialFunctor(Functor):
         
             
 class ParallelFunctor(Functor):
+    "Subclass me."
+
     @staticmethod
     def check_processing(in_parallel):
         # designed to be run either in serial or parallel
@@ -177,8 +216,9 @@ class ExpandTemplate(SerialFunctor):
 
 
 class Mesh(ParallelFunctor):
-    def __init__(self, results_dir='.'):
+    def __init__(self, results_dir='.', naming_keys=None):
         self.results_dir = results_dir + '/'
+        self.naming_keys = naming_keys
     
     def __call__(self, options):
         geo_filename = self.results_dir + options['geo_filename']
@@ -188,14 +228,13 @@ class Mesh(ParallelFunctor):
         
         self.template_call(
             options, lambda: self.subprocess(subp_args, geo_filename),
-            geo_filename, target_name=options['mesh_name'])
+            geo_filename, target_name=options['mesh_name'],
+            naming_keys=self.naming_keys)
 
     def get_output_filenames(self, options):
         return [self.results_dir + options['mesh_filename']]
         
     
-    
-
 class Simulate(ParallelFunctor):
     def __init__(self, binary_path, results_dir='.', verbosity=0):
         self.binary_path = binary_path
@@ -225,23 +264,23 @@ class Postprocess(SerialFunctor):
     error_format = '{:.3e}'
     rate_format = '{:.6f}'
     
-    def __init__(self, error_calculator, report_filename=None,
+    def __init__(self, error_calculator_class, testing_dict=None,
                  naming_keys=None):
-        self.error_calculator = error_calculator.with_host(self)
+        self.error_calculator = error_calculator_class(self, testing_dict)
+        self.testing_dict = testing_dict
         self.naming_keys = naming_keys
-        self.report_filename = report_filename
+
+    def setup(self):
+        try:
+            self.report_file = open(self.testing_dict['report_filename'], 'w')
+        except IndexError:
+            self.report_file = None
         self.resolutions = {}
         self.errors = {}
         self.rates = {}
 
-    def setup(self):
-        if self.report_filename:
-            self.report_file = open(self.report_filename, 'w')
-        else:
-            self.report_file = None
-
     def teardown(self):
-        if self.report_filename:
+        if self.report_file:
             self.report_file.close()
         
     def __call__(self, options):
@@ -296,8 +335,88 @@ class Clean(SerialFunctor):
             try:
                 for filename in trash:
                     os.remove(filename)
-                    msg_list.append(options.indent() + 'removed ' + filename)
+                    msg_list.append('removed ' + filename)
             except OSError:
                 pass
         msg = '\n' + '\n'.join(msg_list) if msg_list else ""
         self.print_end(Success(msg), options, self.naming_keys)
+
+
+class WriteXml(SerialFunctor):
+    def __init__(self, testing_dict, naming_keys=None):
+        """
+        testing_dict must contain the entries 'xml_template_filename',
+        'xml_target_filename', 'max_error_norm' and
+        'min_convergence_rate'.  The latter two entries may of course
+        be dynamic to suit the simulation.
+        """
+        self.testing_dict = testing_dict
+        self.naming_keys = naming_keys
+
+    def setup(self):
+        self.tests = []
+
+    def teardown(self):
+        # Import the Jinja 2 package here so that systems that don't
+        # have it can still use the other functors.
+        import jinja2
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader('.'))
+        template = env.get_template(
+            self.testing_dict['xml_template_filename'])
+        
+        with open(self.testing_dict['xml_target_filename'], 'w') as f:
+            f.write(template.render(
+                problem=self.testing_dict, tests=self.tests))
+            
+    def __call__(self, options):
+        test_info = [['error', 'lt', options['max_error_norm']],
+                     ['rate',  'gt', options['min_convergence_rate']]]
+        msg = ''
+        for ti in test_info:
+            if ti[2]:
+                self.tests.append({
+                    'key': options.str(self.naming_keys),
+                    'metric_type': ti[0],
+                    'rel_op'     : ti[1],
+                    'threshold'  : ti[2] })
+                msg += '\nwrote test: {} &{} {}'.format(*ti)
+        self.print_end(Success(msg), options, self.naming_keys)
+
+
+
+## STRATEGIES
+
+class ErrorCalculator:
+    """
+    Subclass me, but do not change __init__.  Pass all necessary
+    variables through testing_dict.
+    """
+    def __init__(self, host_functor, testing_dict):
+        self.host_functor = host_functor
+        self.testing_dict = testing_dict
+
+        
+class AnalyticalErrorCalculator(ErrorCalculator):
+    def __call__(self, options):
+        sim_name = options.str(self.testing_dict['simulation_naming_keys'])
+        stat = stat_parser(sim_name + '.stat')
+        norm = options['norm']
+        phase = options['phase_name']
+        var = options['error_variable_name']
+        
+        if norm == 1:
+            calc_type = 'integral'
+        elif norm == 2:
+            calc_type = 'l2norm'
+        else:
+            raise Failure(
+                "\nCould not interpret norm.  \nRequire 1 or 2; received {}".\
+                format(norm))
+        try:
+            return stat[phase][var][calc_type][-1]
+        except KeyError:
+            raise Failure(
+                ("\nAnalyticalErrorCalculator expected to find \n{0}::{1} in "+\
+                 "the stat file; \nhas this been defined in the options file?").\
+                format(phase, var))

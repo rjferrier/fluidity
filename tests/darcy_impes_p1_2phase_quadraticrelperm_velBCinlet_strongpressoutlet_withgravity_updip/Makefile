@@ -7,23 +7,11 @@ input:
 post: 
 	python script.py post
 
+xml: 
+	python script.py xml
+
 clean:
-	# rm -f *.face
-	# rm -f *.vtu 
-	# rm -f *.pvtu 
-	# rm -f *.s 
-	# rm -f *.stat 
-	# rm -f *.log-0 
-	# rm -f *.err-0 
-	# rm -f *.msh
-	# rm -f *.halo
-	# rm -f *.err*
-	# rm -f *.log*
-	# rm -f matrixdump*
-	# rm -f first_timestep_adapted_mesh*
-	# rm -f *.convergence 
-	# rm -f *.pyc
-	# rm -f *.txt
-	# rm -f error_*.txt
+	rm -f first_timestep_adapted_mesh*
 	rm -f template_*.geo
+	rm -f matrixdump*
 	python script.py clean

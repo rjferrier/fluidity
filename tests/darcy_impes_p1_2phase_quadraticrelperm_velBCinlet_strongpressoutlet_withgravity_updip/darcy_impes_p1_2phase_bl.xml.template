@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE testproblem SYSTEM "regressiontest.dtd">
+<testproblem>
+  <name>{{ problem.case_name }}</name>
+  <owner userid="{{ problem.user_id }}"/>
+  <tags>{{ problem.simulation_options_extension }}</tags>
+  <problem_definition length="{{ problem.simulation_options_test_length }}" nprocs="{{ problem.nprocs }}">
+    <command_line>
+{{ problem.test_harness_command_line }}
+    </command_line>
+  </problem_definition>
+  <variables/>
+  <pass_tests>
+    <test name="Solvers converged" language="python">
+import os
+files = os.listdir("./")
+assert(not "matrixdump" in files and not "matrixdump.info" in files)
+    </test> {% for test in tests %}
+    <test name="{{ test.metric_type }}{{ key }}: expect {{ test.metric_type }} {{ test.rel_op }} {{ test.threshold }}" language="python">
+from functors import find_in_report
+val = find_in_report(
+    '{{ problem.report_filename }}', '{{ test.key }}', '{{ test.metric_type }}')
+assert(val &{{ test.rel_op }}; {{ test.threshold }})
+    </test> {% endfor %}
+  </pass_tests>
+  <warn_tests>
+  </warn_tests>
+</testproblem>

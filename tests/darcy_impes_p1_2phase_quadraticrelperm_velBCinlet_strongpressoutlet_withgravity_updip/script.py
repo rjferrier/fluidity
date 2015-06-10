@@ -3,24 +3,47 @@
 
 case_name = 'darcy_impes_p1_2phase_bl'
 simulation_naming_keys = ['submodel', 'dim', 'mesh_res']
-default_nproc = 6
+results_naming_keys = simulation_naming_keys + ['field']
+nprocs = 6
 
 
-## OPTIONS TREE ASSEMBLY
+## UPDATE DICTIONARIES 
 
 from simulation_options import *
 from mesh_options import *
 
 # update existing dictionaries to suit this test case
-simulation_dict.update({
-    'case': case_name,
-    'simulation_naming_keys': simulation_naming_keys})
 spatial_dict.update({
     'domain_extents': (1., 1., 1.), 
     'EL_NUM_X': lambda opt: opt['mesh_res'],
     'EL_NUM_Y': 2,
     'EL_NUM_Z': 2,
 })
+simulation_dict.update({
+    'case': case_name,
+    'simulation_naming_keys': simulation_naming_keys})
+
+def max_error_norm(options):
+    if 'saturation' in options['field']:
+        if options['mesh_res'] == 10:
+            return 0.1
+    return None
+        
+        
+testing_dict.update({
+    'case': case_name,
+    'user_id': 'rferrier',
+    'xml_template_filename': 'darcy_impes_p1_2phase_bl.xml.template',
+    'xml_target_filename': 'darcy_impes_p1_2phase_bl.xml',
+    'min_convergence_rate': 0.7,
+    'max_error_norm': max_error_norm,
+    'error_variable_name': lambda opt: opt['variable_name'] + 'AbsError',
+    'test_harness_command_line': 'python script.py pre run post',
+})
+testing_dict.update(simulation_dict)
+
+
+## OPTIONS TREE ASSEMBLY
 
 # build tree for meshing
 mesh_options_tree = dims
@@ -43,6 +66,7 @@ sim_options_tree.update(simulation_dict)
 # and results
 results_options_tree = sim_options_tree * fields[1:]
 results_options_tree.update(simulation_dict)
+results_options_tree.update(testing_dict)
 
 
 ## FUNCTION OBJECTS
@@ -55,15 +79,16 @@ mesh = Mesh()
 expand_sim_options = ExpandTemplate('simulation_options_template_filename',
                                     'simulation_options_filename',
                                     naming_keys=simulation_naming_keys)
+
 simulate = Simulate('../../bin/darcy_impes')
-error_calc = BuckleyLeverettErrorCalculator(
-    'reference_solution/analytic_BL_QuadraticPerm_withgravity_updip_{}.txt',
-    simulation_naming_keys=simulation_naming_keys)
-postproc = Postprocess(error_calc, report_filename=case_name + '.txt',
-                       naming_keys=simulation_naming_keys)
+postproc = Postprocess(AnalyticalErrorCalculator, testing_dict,
+                       naming_keys=results_naming_keys)
 
 clean_meshes = Clean([expand_geo, mesh])
 clean_sims = Clean([expand_sim_options, simulate])
+
+write_xml = WriteXml(testing_dict, naming_keys=results_naming_keys)
+
 
 ## PROCESSING
 
@@ -77,12 +102,12 @@ else:
     
 if 'pre' in commands:
     smap("Expanding geometry files", expand_geo, mesh_options_tree)
-    pmap("Meshing", mesh, mesh_options_tree, default_nproc=default_nproc)
+    pmap("Meshing", mesh, mesh_options_tree, default_nprocs=nprocs)
     smap("Expanding options files", expand_sim_options, sim_options_tree)
     
 if 'run' in commands:
     pmap('Running simulations', simulate, sim_options_tree,
-         default_nproc=default_nproc)
+         default_nprocs=nprocs)
     
 if 'post' in commands:
     smap('Postprocessing', postproc, results_options_tree)
@@ -90,3 +115,6 @@ if 'post' in commands:
 if 'clean' in commands:
     smap('Cleaning meshes', clean_meshes, mesh_options_tree)
     smap('Cleaning simulations', clean_sims, sim_options_tree)
+    
+if 'xml' in commands:
+    smap('Expanding XML file', write_xml, results_options_tree)

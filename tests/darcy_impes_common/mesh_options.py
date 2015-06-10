@@ -88,15 +88,16 @@ for i, dim in enumerate(("X", "Y", "Z")):
             opt['mesh_res'] * opt['reference_element_nums'][i] / 
             opt['reference_element_nums'][0],
 
-        'EL_SIZE_'+dim       : lambda opt: 
+        # Here the optional argument is needed due to Python's late
+        # binding of closures (see
+        # http://docs.python-guide.org/en/latest/writing/gotchas/)
+        'EL_SIZE_'+dim       : lambda opt, dim=dim: 
             opt['DOMAIN_LENGTH_'+dim] / opt['EL_NUM_'+dim]
     })
 
 
 # duplicate entries that double as template placeholders to capitalise
-# their keys.  The optional argument k is needed due to Python's late
-# binding of closures (see
-# http://docs.python-guide.org/en/latest/writing/gotchas/)
+# their keys.
 spatial_dict.update({k.upper(): lambda opt, k=k: opt[k] for k in 
                      ['dim_number', 'mesh_name']})
 
