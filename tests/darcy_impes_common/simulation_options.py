@@ -1,11 +1,14 @@
 from options_iteration import OptionsDict, OptionsNode, OptionsArray
 import xml_snippets
+import re
 
 field_pat = '(.*)([0-9])'
-fields = OptionsArray('field', ['saturation2'], common_entries={
+fields = OptionsArray('field', ['pressure1', 'saturation2'], common_entries={
     'phase_name': lambda opt: 'Phase' + re.sub(field_pat, '\\2', opt['field']),
     'variable_name': lambda opt: re.sub(
         field_pat, '\\1', opt['field']).capitalize(),
+    'field_descriptor': lambda opt: '{}::{}'.format(
+        opt['phase_name'], opt['variable_name'])
 })
 
 submodels = OptionsArray('submodel', [
