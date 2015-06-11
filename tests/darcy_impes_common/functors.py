@@ -38,7 +38,7 @@ def pmap(description, functor, options_tree, default_nprocs=1, in_reverse=True):
     functor.teardown(options_dicts[-1])
 
     
-def find(report_filename, result_id, metric_name):
+def find_in_report(report_filename, result_id, metric_name):
     """
     Opens and searches report_filename and returns the value associated
     with result_id and metric_name.
@@ -95,10 +95,6 @@ class Functor:
     Do not subclass me; subclass SerialFunctor or ParallelFunctor
     instead.
     """
-    def __init__(self, naming_keys=[], excluded_naming_keys=[]):
-        self.naming_keys = naming_keys
-        self.excluded_naming_keys = excluded_naming_keys
-
     def setup(self, options):
         "Code to be executed before iteration"
         pass
@@ -135,9 +131,6 @@ class Functor:
         
 class SerialFunctor(Functor):
     "Subclass me."
-    def __init__(self, naming_keys=[], excluded_naming_keys=[]):
-        Functor.__init__(self, naming_keys, excluded_naming_keys)
-
     @staticmethod
     def check_processing(in_parallel):
         class ProcessingError(Exception):
@@ -160,9 +153,7 @@ class SerialFunctor(Functor):
             else:
                 sep = ''
                 msg = msg.replace('\n', '\n' + options.indent())
-            branch = options.str(only=self.naming_keys,
-                                 exclude=self.excluded_naming_keys,
-                                 formatter='tree')
+            branch = options.str(formatter='tree')
             target.write(branch + sep + msg + '\n')
         else:
             if msg:
@@ -171,9 +162,6 @@ class SerialFunctor(Functor):
             
 class ParallelFunctor(Functor):
     "Subclass me."
-    def __init__(self, naming_keys=[], excluded_naming_keys=[]):
-        Functor.__init__(self, naming_keys, excluded_naming_keys)
-
     @staticmethod
     def check_processing(in_parallel):
         # designed to be run either in serial or parallel
@@ -199,13 +187,11 @@ class ParallelFunctor(Functor):
 class ExpandTemplate(SerialFunctor):
     def __init__(self, template_key, results_key,
                  template_filename_format='./{}',
-                 results_filename_format='./{}',
-                 naming_keys=[], excluded_naming_keys=[]):
+                 results_filename_format='./{}'):
         self.template_key = template_key
         self.results_key = results_key
         self.template_filename_format = template_filename_format
         self.results_filename_format = results_filename_format
-        SerialFunctor.__init__(self, naming_keys, excluded_naming_keys)
 
     def __call__(self, options):
         template_filename = self.template_filename_format.\
@@ -225,10 +211,8 @@ class ExpandTemplate(SerialFunctor):
 
 
 class Mesh(ParallelFunctor):
-    def __init__(self, results_dir='.',
-                 naming_keys=[], excluded_naming_keys=[]):
+    def __init__(self, results_dir='.'):
         self.results_dir = results_dir + '/'
-        ParallelFunctor.__init__(self, naming_keys, excluded_naming_keys)
     
     def __call__(self, options):
         geo_filename = self.results_dir + options['geo_filename']
@@ -245,12 +229,10 @@ class Mesh(ParallelFunctor):
         
     
 class Simulate(ParallelFunctor):
-    def __init__(self, binary_path, results_dir='.', verbosity=0,
-                 naming_keys=[], excluded_naming_keys=[]):
+    def __init__(self, binary_path, results_dir='.', verbosity=0):
         self.binary_path = binary_path
         self.results_dir = results_dir + '/'
         self.verbosity = verbosity
-        ParallelFunctor.__init__(self, naming_keys, excluded_naming_keys)
     
     def __call__(self, options):
         input_filename = self.results_dir + \
@@ -274,9 +256,10 @@ class Simulate(ParallelFunctor):
 class Postprocess(SerialFunctor):
     error_format = '{:.3e}'
     rate_format = '{:.6f}'
-    
+
     def __init__(self, naming_keys=[], excluded_naming_keys=[]):
-        SerialFunctor.__init__(self, naming_keys, excluded_naming_keys)
+        self.naming_keys = naming_keys
+        self.excluded_naming_keys = excluded_naming_keys
 
     def setup(self, options):
         try:
@@ -335,9 +318,8 @@ class Postprocess(SerialFunctor):
 
 
 class Clean(SerialFunctor):
-    def __init__(self, functors, naming_keys=[], excluded_naming_keys=[]):
+    def __init__(self, functors):
         self.functors = functors
-        SerialFunctor.__init__(self, naming_keys, excluded_naming_keys)
         
     def __call__(self, options):
         msg_list = []
@@ -358,7 +340,8 @@ class Clean(SerialFunctor):
 
 class WriteXml(SerialFunctor):
     def __init__(self, naming_keys=[], excluded_naming_keys=[]):
-        SerialFunctor.__init__(self, naming_keys, excluded_naming_keys)
+        self.naming_keys = naming_keys
+        self.excluded_naming_keys = excluded_naming_keys
         
     def setup(self, options):
         self.tests = []
@@ -370,25 +353,31 @@ class WriteXml(SerialFunctor):
         env = jinja2.Environment(
             loader=jinja2.FileSystemLoader('.'))
         template = env.get_template(
-            self.options['xml_template_filename'])
+            options['xml_template_filename'])
         
-        with open(self.options['xml_target_filename'], 'w') as f:
+        with open(options['xml_target_filename'], 'w') as f:
             f.write(template.render(
-                problem=self.options, tests=self.tests))
+                problem=options, tests=self.tests))
             
     def __call__(self, options):
         test_info = [['error', 'lt', options['max_error_norm']],
                      ['rate',  'gt', options['min_convergence_rate']]]
         msg = ''
         for ti in test_info:
-            if ti[2]:
-                self.tests.append({
-                    'key': options.str(only=self.naming_keys,
-                                       exclude=self.excluded_naming_keys),
-                    'metric_type': ti[0],
-                    'rel_op'     : ti[1],
-                    'threshold'  : ti[2] })
-                msg += '\nwrote test: {} &{} {}'.format(*ti)
+            # do not write a test if a threshold is not given
+            if not ti[2]:
+                continue
+            # do not write a rate test if this is the first mesh in
+            # the series
+            if ti[0] == 'rate' and options.get_node_info('mesh_res').is_first():
+                continue
+            self.tests.append({
+                'key': options.str(only=self.naming_keys,
+                                   exclude=self.excluded_naming_keys),
+                'metric_type': ti[0],
+                'rel_op'     : ti[1],
+                'threshold'  : ti[2] })
+            msg += '\nwrote test: {} &{}; {}'.format(*ti)
         self.print_end(Success(msg), options)
 
 

@@ -55,8 +55,8 @@ mesh_resolutions = OptionsArray('mesh_res', [10, 20, 40, 80])
     
 # Define some universal options.
 spatial_dict = OptionsDict({
-    'domain_extents'         : (1.0, 1.2, 0.8),   # see note [1]
-    'reference_element_nums' : (10, 12, 8),
+    'domain_extents'         : (1., 1., 1.),   # see note [1]
+    'reference_element_nums' : (10, 10, 10),
     'INLET_ID'               : "1",
     'OUTLET_ID'              : "2",
     

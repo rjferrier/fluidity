@@ -83,22 +83,7 @@
     </finish_time>
     <adaptive_timestep/>
   </timestepping>
-  <physical_parameters>
-    <gravity>
-      <magnitude>
-        <real_value rank="0">1.5e+06</real_value>
-      </magnitude>
-      <vector_field name="GravityDirection" rank="1">
-        <prescribed>
-          <mesh name="ElementWiseMesh"/>
-          <value name="WholeMesh">
-            <constant>
-              <real_value shape="$DIM_NUMBER" dim1="dim" rank="1">$GRAVITY_DIRECTION</real_value>
-            </constant>
-          </value>
-        </prescribed>
-      </vector_field>
-    </gravity>
+  <physical_parameters> $GRAVITY_SNIPPET
   </physical_parameters>
   <material_phase name="Phase1">
     <scalar_field name="Pressure" rank="0">
@@ -144,7 +129,7 @@
     <scalar_field name="Saturation" rank="0">
       <diagnostic>
         <mesh name="PressureMesh"/>
-        <algorithm name="Internal"/> $SAT_FACE_VALUE_OPTION
+        <algorithm name="Internal"/> $SAT_FACE_VALUE_SNIPPET
         <convergence>
           <include_in_convergence/>
         </convergence>
@@ -157,15 +142,7 @@
     <scalar_field name="RelativePermeability" rank="0">
       <diagnostic>
         <mesh name="PressureMesh"/>
-        <algorithm name="Internal"/>
-        <correlation name="PowerLaw">
-          <exponents>
-            <real_value shape="2" rank="1">2.0 2.0</real_value>
-          </exponents>
-          <residual_saturations>
-            <real_value shape="2" rank="1">0.1 0.1</real_value>
-          </residual_saturations>
-        </correlation>
+        <algorithm name="Internal"/> $RELATIVE_PERMEABILITY_RELATION
         <face_value name="$REL_PERM_FACE_VALUE"/>
         <stat>
           <include_cv_stats/>
@@ -325,7 +302,7 @@
         <mesh name="PressureMesh"/>
         <initial_condition name="WholeMesh">
           <constant>
-            <real_value rank="0">0.1</real_value>
+            <real_value rank="0">$INITIAL_SATURATION2</real_value>
           </constant>
         </initial_condition>
         <convergence>
@@ -366,7 +343,7 @@
         <algorithm name="Internal"/>
         <equation_of_state name="IncompressibleLinear">
           <reference_density>
-            <real_value rank="0">2.0</real_value>
+            <real_value rank="0">$DENSITY2</real_value>
           </reference_density>
         </equation_of_state>
         <stat>
@@ -424,39 +401,7 @@
         </stat>
         <consistent_interpolation/>
       </diagnostic>
-    </scalar_field>
-    <scalar_field name="LinearInterpolatedAnalyticalSaturationSolution">
-      <prescribed>
-        <mesh name="PressureMesh"/>
-        <value name="WholeMesh">
-          <python>
-            <string_value lines="20" type="code" language="python">def val(X, t):
-   from sys import path
-   path.append('../darcy_impes_common/')
-   from buckley_leverett_tools import interp_using_one_dimensional_solution
-   afname = "reference_solution/" + \
-       "analytic_BL_QuadraticPerm_withgravity_updip_saturation2.txt"
-   return interp_using_one_dimensional_solution(X[0], afname)</string_value>
-          </python>
-        </value>
-        <stat>
-          <include_cv_stats/>
-        </stat>
-        <do_not_recalculate/>
-      </prescribed>
-    </scalar_field>
-    <scalar_field name="SaturationAbsError">
-      <diagnostic>
-        <mesh name="PressureMesh"/>
-        <algorithm source_field_2_type="scalar" name="scalar_difference" source_field_1_name="Saturation" source_field_2_name="LinearInterpolatedAnalyticalSaturationSolution" material_phase_support="single" source_field_1_type="scalar">
-          <absolute_difference/>
-        </algorithm>
-        <stat>
-          <include_cv_stats/>
-        </stat>
-        <consistent_interpolation/>
-      </diagnostic>
-    </scalar_field>
+    </scalar_field> $PRESSURE2_ERROR_SNIPPET $SATURATION2_ERROR_SNIPPET
   </material_phase>
   <porous_media>
     <scalar_field name="Porosity">

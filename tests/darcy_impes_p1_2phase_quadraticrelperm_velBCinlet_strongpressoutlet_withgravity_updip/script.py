@@ -1,15 +1,46 @@
 import sys
+sys.path.append('../darcy_impes_common')
 from mesh_options import *
 from simulation_and_testing_options import *
 from functors import *
 from buckley_leverett_tools import *
-
+from xml_snippets import *
 
 ## SETTINGS
 
 case_name = 'darcy_impes_p1_2phase_bl'
-simulation_naming_keys = ['submodel', 'dim', 'mesh_res']
+simulation_naming_keys = ['subcase', 'submodel', 'dim', 'mesh_res']
 nprocs = 6
+
+
+
+subcases = OptionsArray('subcase', [
+    OptionsNode('p1satdiag', {
+        'GRAVITY_SNIPPET': "",
+        'RELATIVE_PERMEABILITY_RELATION': quadratic_relperm_correlation,
+        'RESIDUAL_SATURATION_SNIPPET': "",
+        'INITIAL_SATURATION2': 0.,
+        'DENSITY2': 1.,
+        'SATURATION2_ERROR_SNIPPET': error_variable.format(
+            'p1satdiag', 'saturation2', 'Saturation'),
+        'PRESSURE2_ERROR_SNIPPET': error_variable.format(
+            'p1satdiag', 'pressure2', 'Pressure'),
+    }),
+    
+    OptionsNode('withgrav_updip', {
+        'SUBCASE': "withgrav_updip",
+        'GRAVITY_SNIPPET': gravity,
+        'RELATIVE_PERMEABILITY_RELATION': quadratic_relperm_correlation,
+        'RESIDUAL_SATURATION_SNIPPET': residual_saturations,
+        'RESIDUAL_SATURATION1': 0.1,
+        'RESIDUAL_SATURATION2': 0.2,
+        'INITIAL_SATURATION2': 0.1,
+        'DENSITY2': 2.,
+        'SATURATION2_ERROR_SNIPPET': error_variable.format(
+            'withgrav_updip', 'saturation2', 'Saturation'),
+        'PRESSURE2_ERROR_SNIPPET': "",
+    }),
+])
 
 
 ## UPDATE DICTIONARIES 
@@ -19,9 +50,8 @@ nprocs = 6
 
 spatial_dict.update({
     'domain_extents': (1., 1., 1.), 
-    'EL_NUM_X': lambda opt: opt['mesh_res'],
-    'EL_NUM_Y': 2,
-    'EL_NUM_Z': 2,
+    'EL_NUM_Y': lambda opt: opt['EL_NUM_X']/2,
+    'EL_NUM_Z': lambda opt: opt['EL_NUM_X']/2,
 })
 
 simulation_dict.update({
@@ -41,6 +71,7 @@ def max_error_norm(options):
 testing_dict.update({
     'case': case_name,
     'user_id': 'rferrier',
+    'nprocs': nprocs,
     'xml_template_filename': 'darcy_impes_p1_2phase_bl.xml.template',
     'xml_target_filename': 'darcy_impes_p1_2phase_bl.xml',
     'simulation_options_test_length': 'short',
@@ -64,18 +95,21 @@ mesh_options_tree = dims
 # only use the regular mesh type here
 mesh_options_tree[1:] *= mesh_types[0:1]
 
-# run four different resolutions in 1D; three in 2D; two in 1D
-mesh_options_tree[0] *= mesh_resolutions[0:4]
-mesh_options_tree[1] *= mesh_resolutions[0:3]
-mesh_options_tree[2] *= mesh_resolutions[0:2]
+# the solution discontinuity makes the convergence very noisy,
+# especially for 2D and 1D where there are fewer grid points.
+mesh_options_tree[0] *= mesh_resolutions[0:4:3]
+mesh_options_tree[1] *= mesh_resolutions[0:3:2]
+mesh_options_tree[2] *= mesh_resolutions[0:2:1]
 
 # populate the tree with geometry- and mesh-related dictionary
 # entries.  Need to modify some of them for this test case.
 mesh_options_tree.update(spatial_dict)
 
+
 # do the same for simulations
-sim_options_tree = submodels * mesh_options_tree
+sim_options_tree = subcases * submodels * mesh_options_tree
 sim_options_tree.update(simulation_dict)
+
 
 # and testing
 test_options_tree = sim_options_tree * fields[1:]
@@ -90,7 +124,8 @@ error_calcs = OptionsArray('error_calc', [
     OptionsNode('from1dref', {
         'error_calc_function': get_error_with_one_dimensional_solution})
 ])
-test_options_tree = error_calcs * test_options_tree
+test_options_tree = error_calcs[0] * test_options_tree
+
 
 
 ## FUNCTION OBJECTS

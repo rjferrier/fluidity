@@ -8,11 +8,11 @@ import re
 submodels = OptionsArray('submodel', [
     OptionsNode('relpermupwind', {
         'REL_PERM_FACE_VALUE': "FirstOrderUpwind",
-        'SAT_FACE_VALUE_OPTION': "",
+        'SAT_FACE_VALUE_SNIPPET': "",
     }),
     OptionsNode('modrelpermupwind', {
         'REL_PERM_FACE_VALUE': "RelPermOverSatUpwind",
-        'SAT_FACE_VALUE_OPTION': xml_snippets.sat_face_value_fe_sweby,
+        'SAT_FACE_VALUE_SNIPPET': xml_snippets.sat_face_value_fe_sweby,
     }),
 ])
 
