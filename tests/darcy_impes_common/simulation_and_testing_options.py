@@ -21,9 +21,7 @@ simulation_dict = OptionsDict({
     'simulation_options_extension': 'diml',
 
     'simulation_options_template_filename': lambda opt: 
-    'template_{}.{}'.format(opt['case'], opt['simulation_options_extension']),
-
-    'simulation_name': lambda opt: opt.str(only=opt['simulation_naming_keys']),
+    '{}.{}.template'.format(opt['case'], opt['simulation_options_extension']),
     
     'simulation_options_filename': lambda opt: 
     '{}.{}'.format(opt['simulation_name'], opt['simulation_options_extension']),
@@ -34,7 +32,10 @@ simulation_dict = OptionsDict({
 ## TESTING AND RESULTS 
 
 field_pat = '(.*)([0-9])'
-fields = OptionsArray('field', ['pressure1', 'saturation2'], common_entries={
+fields = OptionsArray(
+    'field', ['pressure1', 'saturation2'],
+    
+    common_entries={
     'phase_name': lambda opt: 'Phase' + re.sub(field_pat, '\\2', opt['field']),
     'variable_name': lambda opt: re.sub(
         field_pat, '\\1', opt['field']).capitalize(),
@@ -42,8 +43,9 @@ fields = OptionsArray('field', ['pressure1', 'saturation2'], common_entries={
         opt['phase_name'], opt['variable_name'])
 })
 
+
 testing_dict = OptionsDict({
-    'simulation_options_test_length': 'short',
     'report_filename': lambda opt: opt['case'] + '.out',
+    'vtu_filename': lambda opt: opt['simulation_name'] + '_1.vtu',
     'norm': 1,
 })

@@ -70,8 +70,8 @@ spatial_dict = OptionsDict({
     lambda opt: join((opt['geo_template_name'], opt.str('mesh_res'))),
 
     # etc.
-    'geo_template_filename': lambda opt: 'template_' + 
-        opt['geo_template_name'] + '.geo',
+    'geo_template_filename': lambda opt:
+        opt['geo_template_name'] + '.geo.template',
     'geo_filename' : lambda opt: opt['mesh_name'] + '.geo',
     'mesh_filename' : lambda opt: opt['mesh_name'] + '.msh',
 })
