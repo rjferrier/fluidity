@@ -6,7 +6,7 @@
   <tags>{{ problem.simulation_options_extension }}</tags>
   <problem_definition length="{{ problem.simulation_options_test_length }}" nprocs="{{ problem.nprocs }}">
     <command_line>
-
+# requisite commands are covered by `make input`
     </command_line>
   </problem_definition>
   <variables/>

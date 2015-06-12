@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE testproblem SYSTEM "regressiontest.dtd">
+<testproblem>
+  <name>darcy_impes_p1_2phase_bl</name>
+  <owner userid="rferrier"/>
+  <tags>diml</tags>
+  <problem_definition length="short" nprocs="6">
+    <command_line>
+# requisite commands are covered by `make input`
+    </command_line>
+  </problem_definition>
+  <variables/>
+  <pass_tests>
+    <test name="Solvers converged" language="python">
+import os
+files = os.listdir("./")
+assert(not "matrixdump" in files and not "matrixdump.info" in files)
+    </test> 
+    <test name="p1satdiag_relpermupwind_1d_10_saturation2: expect error &lt; 0.1" language="python">
+from sys import path
+path.append('../darcy_impes_common/')
+from functors import find_in_report
+val = find_in_report(
+    'darcy_impes_p1_2phase_bl_report.txt', 'p1satdiag_relpermupwind_1d_10_saturation2', 'error')
+assert(val &lt; 0.1)
+    </test> 
+    <test name="p1satdiag_relpermupwind_1d_80_saturation2: expect rate &gt; 0.7" language="python">
+from sys import path
+path.append('../darcy_impes_common/')
+from functors import find_in_report
+val = find_in_report(
+    'darcy_impes_p1_2phase_bl_report.txt', 'p1satdiag_relpermupwind_1d_80_saturation2', 'rate')
+assert(val &gt; 0.7)
+    </test> 
+    <test name="p1satdiag_relpermupwind_2d_reg_10_saturation2: expect error &lt; 0.1" language="python">
+from sys import path
+path.append('../darcy_impes_common/')
+from functors import find_in_report
+val = find_in_report(
+    'darcy_impes_p1_2phase_bl_report.txt', 'p1satdiag_relpermupwind_2d_reg_10_saturation2', 'error')
+assert(val &lt; 0.1)
+    </test> 
+    <test name="p1satdiag_relpermupwind_2d_reg_40_saturation2: expect rate &gt; 0.7" language="python">
+from sys import path
+path.append('../darcy_impes_common/')
+from functors import find_in_report
+val = find_in_report(
+    'darcy_impes_p1_2phase_bl_report.txt', 'p1satdiag_relpermupwind_2d_reg_40_saturation2', 'rate')
+assert(val &gt; 0.7)
+    </test> 
+    <test name="p1satdiag_relpermupwind_3d_reg_10_saturation2: expect error &lt; 0.1" language="python">
+from sys import path
+path.append('../darcy_impes_common/')
+from functors import find_in_report
+val = find_in_report(
+    'darcy_impes_p1_2phase_bl_report.txt', 'p1satdiag_relpermupwind_3d_reg_10_saturation2', 'error')
+assert(val &lt; 0.1)
+    </test> 
+    <test name="p1satdiag_relpermupwind_3d_reg_20_saturation2: expect rate &gt; 0.7" language="python">
+from sys import path
+path.append('../darcy_impes_common/')
+from functors import find_in_report
+val = find_in_report(
+    'darcy_impes_p1_2phase_bl_report.txt', 'p1satdiag_relpermupwind_3d_reg_20_saturation2', 'rate')
+assert(val &gt; 0.7)
+    </test> 
+    <test name="p1satdiag_modrelpermupwind_1d_10_saturation2: expect error &lt; 0.1" language="python">
+from sys import path
+path.append('../darcy_impes_common/')
+from functors import find_in_report
+val = find_in_report(
+    'darcy_impes_p1_2phase_bl_report.txt', 'p1satdiag_modrelpermupwind_1d_10_saturation2', 'error')
+assert(val &lt; 0.1)
+    </test> 
+    <test name="p1satdiag_modrelpermupwind_1d_80_saturation2: expect rate &gt; 0.7" language="python">
+from sys import path
+path.append('../darcy_impes_common/')
+from functors import find_in_report
+val = find_in_report(
+    'darcy_impes_p1_2phase_bl_report.txt', 'p1satdiag_modrelpermupwind_1d_80_saturation2', 'rate')
+assert(val &gt; 0.7)
+    </test> 
+    <test name="p1satdiag_modrelpermupwind_2d_reg_10_saturation2: expect error &lt; 0.1" language="python">
+from sys import path
+path.append('../darcy_impes_common/')
+from functors import find_in_report
+val = find_in_report(
+    'darcy_impes_p1_2phase_bl_report.txt', 'p1satdiag_modrelpermupwind_2d_reg_10_saturation2', 'error')
+assert(val &lt; 0.1)
+    </test> 
+    <test name="p1satdiag_modrelpermupwind_2d_reg_40_saturation2: expect rate &gt; 0.7" language="python">
+from sys import path
+path.append('../darcy_impes_common/')
+from functors import find_in_report
+val = find_in_report(
+    'darcy_impes_p1_2phase_bl_report.txt', 'p1satdiag_modrelpermupwind_2d_reg_40_saturation2', 'rate')
+assert(val &gt; 0.7)
+    </test> 
+    <test name="p1satdiag_modrelpermupwind_3d_reg_10_saturation2: expect error &lt; 0.1" language="python">
+from sys import path
+path.append('../darcy_impes_common/')
+from functors import find_in_report
+val = find_in_report(
+    'darcy_impes_p1_2phase_bl_report.txt', 'p1satdiag_modrelpermupwind_3d_reg_10_saturation2', 'error')
+assert(val &lt; 0.1)
+    </test> 
+    <test name="p1satdiag_modrelpermupwind_3d_reg_20_saturation2: expect rate &gt; 0.7" language="python">
+from sys import path
+path.append('../darcy_impes_common/')
+from functors import find_in_report
+val = find_in_report(
+    'darcy_impes_p1_2phase_bl_report.txt', 'p1satdiag_modrelpermupwind_3d_reg_20_saturation2', 'rate')
+assert(val &gt; 0.7)
+    </test> 
+    <test name="withgrav_updip_relpermupwind_1d_10_saturation2: expect error &lt; 0.1" language="python">
+from sys import path
+path.append('../darcy_impes_common/')
+from functors import find_in_report
+val = find_in_report(
+    'darcy_impes_p1_2phase_bl_report.txt', 'withgrav_updip_relpermupwind_1d_10_saturation2', 'error')
+assert(val &lt; 0.1)
+    </test> 
+    <test name="withgrav_updip_relpermupwind_1d_80_saturation2: expect rate &gt; 0.7" language="python">
+from sys import path
+path.append('../darcy_impes_common/')
+from functors import find_in_report
+val = find_in_report(
+    'darcy_impes_p1_2phase_bl_report.txt', 'withgrav_updip_relpermupwind_1d_80_saturation2', 'rate')
+assert(val &gt; 0.7)
+    </test> 
+    <test name="withgrav_updip_relpermupwind_2d_reg_10_saturation2: expect error &lt; 0.1" language="python">
+from sys import path
+path.append('../darcy_impes_common/')
+from functors import find_in_report
+val = find_in_report(
+    'darcy_impes_p1_2phase_bl_report.txt', 'withgrav_updip_relpermupwind_2d_reg_10_saturation2', 'error')
+assert(val &lt; 0.1)
+    </test> 
+    <test name="withgrav_updip_relpermupwind_2d_reg_40_saturation2: expect rate &gt; 0.7" language="python">
+from sys import path
+path.append('../darcy_impes_common/')
+from functors import find_in_report
+val = find_in_report(
+    'darcy_impes_p1_2phase_bl_report.txt', 'withgrav_updip_relpermupwind_2d_reg_40_saturation2', 'rate')
+assert(val &gt; 0.7)
+    </test> 
+    <test name="withgrav_updip_relpermupwind_3d_reg_10_saturation2: expect error &lt; 0.1" language="python">
+from sys import path
+path.append('../darcy_impes_common/')
+from functors import find_in_report
+val = find_in_report(
+    'darcy_impes_p1_2phase_bl_report.txt', 'withgrav_updip_relpermupwind_3d_reg_10_saturation2', 'error')
+assert(val &lt; 0.1)
+    </test> 
+    <test name="withgrav_updip_relpermupwind_3d_reg_20_saturation2: expect rate &gt; 0.7" language="python">
+from sys import path
+path.append('../darcy_impes_common/')
+from functors import find_in_report
+val = find_in_report(
+    'darcy_impes_p1_2phase_bl_report.txt', 'withgrav_updip_relpermupwind_3d_reg_20_saturation2', 'rate')
+assert(val &gt; 0.7)
+    </test> 
+    <test name="withgrav_updip_modrelpermupwind_1d_10_saturation2: expect error &lt; 0.1" language="python">
+from sys import path
+path.append('../darcy_impes_common/')
+from functors import find_in_report
+val = find_in_report(
+    'darcy_impes_p1_2phase_bl_report.txt', 'withgrav_updip_modrelpermupwind_1d_10_saturation2', 'error')
+assert(val &lt; 0.1)
+    </test> 
+    <test name="withgrav_updip_modrelpermupwind_1d_80_saturation2: expect rate &gt; 0.7" language="python">
+from sys import path
+path.append('../darcy_impes_common/')
+from functors import find_in_report
+val = find_in_report(
+    'darcy_impes_p1_2phase_bl_report.txt', 'withgrav_updip_modrelpermupwind_1d_80_saturation2', 'rate')
+assert(val &gt; 0.7)
+    </test> 
+    <test name="withgrav_updip_modrelpermupwind_2d_reg_10_saturation2: expect error &lt; 0.1" language="python">
+from sys import path
+path.append('../darcy_impes_common/')
+from functors import find_in_report
+val = find_in_report(
+    'darcy_impes_p1_2phase_bl_report.txt', 'withgrav_updip_modrelpermupwind_2d_reg_10_saturation2', 'error')
+assert(val &lt; 0.1)
+    </test> 
+    <test name="withgrav_updip_modrelpermupwind_2d_reg_40_saturation2: expect rate &gt; 0.7" language="python">
+from sys import path
+path.append('../darcy_impes_common/')
+from functors import find_in_report
+val = find_in_report(
+    'darcy_impes_p1_2phase_bl_report.txt', 'withgrav_updip_modrelpermupwind_2d_reg_40_saturation2', 'rate')
+assert(val &gt; 0.7)
+    </test> 
+    <test name="withgrav_updip_modrelpermupwind_3d_reg_10_saturation2: expect error &lt; 0.1" language="python">
+from sys import path
+path.append('../darcy_impes_common/')
+from functors import find_in_report
+val = find_in_report(
+    'darcy_impes_p1_2phase_bl_report.txt', 'withgrav_updip_modrelpermupwind_3d_reg_10_saturation2', 'error')
+assert(val &lt; 0.1)
+    </test> 
+    <test name="withgrav_updip_modrelpermupwind_3d_reg_20_saturation2: expect rate &gt; 0.7" language="python">
+from sys import path
+path.append('../darcy_impes_common/')
+from functors import find_in_report
+val = find_in_report(
+    'darcy_impes_p1_2phase_bl_report.txt', 'withgrav_updip_modrelpermupwind_3d_reg_20_saturation2', 'rate')
+assert(val &gt; 0.7)
+    </test> 
+  </pass_tests>
+  <warn_tests>
+  </warn_tests>
+</testproblem>

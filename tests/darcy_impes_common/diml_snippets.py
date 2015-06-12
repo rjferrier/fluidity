@@ -38,7 +38,7 @@ quadratic_relperm_correlation = """
         <correlation name="PowerLaw">
           <exponents>
             <real_value shape="2" rank="1">2.0 2.0</real_value>
-          </exponents> $RESIDUAL_SATURATIONS
+          </exponents> $RESIDUAL_SATURATION_SNIPPET
         </correlation>"""
 
 residual_saturations = """

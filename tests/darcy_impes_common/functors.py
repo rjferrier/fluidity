@@ -88,6 +88,36 @@ def check_file_exists(input_filename):
             raise Failure(input_filename + " not found")
 
 
+            
+## FUNCTOR STRATEGIES
+
+class GetErrorFromField:
+    def __init__(self, results_dir='.'):
+        self.results_dir = results_dir
+
+    def __call__(self, options):
+        # settings
+        calc_type = 'integral'      # can be integral or l2norm
+        timestep_index = -1
+        
+        stat_filename = '{}/{}.stat'.format(
+            self.results_dir, options['simulation_name'])
+        check_file_exists(stat_filename)
+        stat = stat_parser(stat_filename)
+        
+        phase = options['phase_name']
+        var = options['error_variable_name']
+        try:
+            # n.b. assume the last timestep is required
+            return stat[phase][var][calc_type][timestep_index]
+        except KeyError:
+            raise Failure(
+                ("\nGetErrorFromField expected to find \n"+\
+                 "{0}::{1} in the stat file; \n"+\
+                 "has this been defined in the options file?").\
+                format(phase, var))
+
+
 ## FUNCTOR BASE CLASSES
 
 class Functor:
@@ -103,14 +133,13 @@ class Functor:
         "Code to be executed after iteration"
         pass
         
-    def subprocess(self, subprocess_args, target_name):
+    def subprocess(self, subprocess_args, error_filename):
         try:
-            err_filename = target_name + '.err'
-            with open(err_filename, 'w') as err_file:
+            with open(error_filename, 'w') as err_file:
                 subprocess.check_output(subprocess_args, stderr=err_file)
         except subprocess.CalledProcessError as e:
-            raise Failure('FAILURE: see ' + err_filename)
-        os.remove(err_filename)
+            raise Failure('FAILURE: see ' + error_filename)
+        os.remove(error_filename)
 
     def template_call(self, options, operation, input_filename='', 
                       target_name=''):
@@ -180,90 +209,88 @@ class ParallelFunctor(Functor):
             intro = ''
         if msg:
             target.write(" "*8 + intro + msg + '\n')
-        
+
         
 ## FUNCTOR CONCRETE CLASSES
 
 class ExpandTemplate(SerialFunctor):
-    def __init__(self, template_key, results_key,
-                 template_filename_format='./{}',
-                 results_filename_format='./{}'):
+    def __init__(self, template_key, target_key,
+                 template_dir='.', target_dir='.'):
         self.template_key = template_key
-        self.results_key = results_key
-        self.template_filename_format = template_filename_format
-        self.results_filename_format = results_filename_format
+        self.target_key = target_key
+        self.template_dir = template_dir
+        self.target_dir = target_dir
 
     def __call__(self, options):
-        template_filename = self.template_filename_format.\
-                            format(options[self.template_key])
-        results_filename = self.results_filename_format.\
-                           format(options[self.results_key])
-
+        template_filename = '{}/{}'.format(self.template_dir,
+                                           options[self.template_key])
+        target_filename = '{}/{}'.format(self.target_dir,
+                                         options[self.target_key])
         self.template_call(
             options, lambda: options.expand_template_file(
-                template_filename, results_filename, loops=2),
-            template_filename, target_name=options[self.results_key])
-
-    def get_output_filenames(self, options):
-        return [self.results_filename_format.format(
-            options[self.results_key])]
-        
+                template_filename, target_filename, loops=3),
+            template_filename, target_name=target_filename)
 
 
 class Mesh(ParallelFunctor):
-    def __init__(self, results_dir='.'):
-        self.results_dir = results_dir + '/'
-    
+    def __init__(self, working_dir='.'):
+        self.working_dir = working_dir
+
     def __call__(self, options):
-        geo_filename = self.results_dir + options['geo_filename']
-        mesh_filename = self.results_dir + options['mesh_filename']
+        mesh_name = options['mesh_name']
+        geo_filename = '{}/{}'.format(self.working_dir, options['geo_filename'])
+        mesh_filename = '{}/{}'.format(self.working_dir, options['mesh_filename'])
+        error_filename = '{}/{}.err'.format(self.working_dir, mesh_name)
+        
         subp_args = ['gmsh', '-{}'.format(options['dim_number']), geo_filename,
                      '-o', mesh_filename]
-        
-        self.template_call(
-            options, lambda: self.subprocess(subp_args, geo_filename),
-            geo_filename, target_name=options['mesh_name'])
 
-    def get_output_filenames(self, options):
-        return [self.results_dir + options['mesh_filename']]
+        self.template_call(
+            options, lambda: self.subprocess(subp_args, error_filename),
+            geo_filename, target_name=mesh_name)
         
     
 class Simulate(ParallelFunctor):
-    def __init__(self, binary_path, results_dir='.', verbosity=0):
+    def __init__(self, binary_path, verbosity=0, working_dir='.'):
         self.binary_path = binary_path
-        self.results_dir = results_dir + '/'
         self.verbosity = verbosity
+        self.working_dir = working_dir
     
     def __call__(self, options):
-        input_filename = self.results_dir + \
-                         options['simulation_options_filename']
         sim_name = options['simulation_name']
+        sim_stem = '{}/{}'.format(self.working_dir, sim_name)
+        input_filename = '{}/{}'.format(
+            self.working_dir, options['simulation_options_filename'])
+        error_filename = sim_stem + '.err'
+        
         subp_args = [self.binary_path]
         if self.verbosity > 0:
-            subp_args += ['-v{0}'.format(self.verbosity),
-                          '-l {0}.log'.format(sim_name)]
+            subp_args += ['-v{}'.format(self.verbosity),
+                          '-l {}/{}.log'.format(self.working_dir, sim_stem)]
         subp_args.append(input_filename)
 
         self.template_call(
-            options, lambda: self.subprocess(subp_args, sim_name),
+            options, lambda: self.subprocess(subp_args, error_filename),
             input_filename, target_name=sim_name)
-
-    def get_output_filenames(self, options):
-        stem = self.results_dir + options['simulation_name']
-        return [stem + ext for ext in ['_*.vtu', '.stat', '.err']]
 
 
 class Postprocess(SerialFunctor):
     error_format = '{:.3e}'
     rate_format = '{:.6f}'
 
-    def __init__(self, naming_keys=[], excluded_naming_keys=[]):
+    def __init__(self, error_getter_class=GetErrorFromField,
+                 naming_keys=[], excluded_naming_keys=[],
+                 results_dir='.', report_dir='.'):
+        self.error_getter = error_getter_class(results_dir)
         self.naming_keys = naming_keys
         self.excluded_naming_keys = excluded_naming_keys
+        self.results_dir = results_dir
+        self.report_dir = report_dir
 
     def setup(self, options):
         try:
-            self.report_file = open(options['report_filename'], 'w')
+            self.report_file = open('{}/{}'.format(
+                self.report_dir, options['report_filename']), 'w')
         except IndexError:
             self.report_file = None
         self.resolutions = {}
@@ -275,14 +302,13 @@ class Postprocess(SerialFunctor):
             self.report_file.close()
         
     def __call__(self, options):
-        current_id = options.str(
-            only=self.naming_keys,
-            exclude=self.excluded_naming_keys)
+        current_id = options.str(only=self.naming_keys,
+                                 exclude=self.excluded_naming_keys)
         
         # n.b. need to convert from integer to float
         current_res = float(options['mesh_res'])
         try:
-            current_err = options['error_calc_function']
+            current_err = self.error_getter(options)
         except Failure as state:
             return self.print_end(state, options)
         
@@ -314,34 +340,14 @@ class Postprocess(SerialFunctor):
             self.report_file.write('{}  {}\n'.format(current_id, msg))
             
         self.print_end(Success(msg), options)
-            
-
-
-class Clean(SerialFunctor):
-    def __init__(self, functors):
-        self.functors = functors
-        
-    def __call__(self, options):
-        msg_list = []
-        for func in self.functors:
-            filename_patterns = func.get_output_filenames(options)
-            trash = []
-            for fp in filename_patterns:
-                trash += glob.glob(fp)
-            try:
-                for filename in trash:
-                    os.remove(filename)
-                    msg_list.append('removed ' + filename)
-            except OSError:
-                pass
-        msg = '\n' + '\n'.join(msg_list) if msg_list else ""
-        self.print_end(Success(msg), options)
 
 
 class WriteXml(SerialFunctor):
-    def __init__(self, naming_keys=[], excluded_naming_keys=[]):
+    def __init__(self, naming_keys=[], excluded_naming_keys=[],
+                 template_dir='.'):
         self.naming_keys = naming_keys
         self.excluded_naming_keys = excluded_naming_keys
+        self.template_dir = template_dir
         
     def setup(self, options):
         self.tests = []
@@ -352,8 +358,8 @@ class WriteXml(SerialFunctor):
         import jinja2
         env = jinja2.Environment(
             loader=jinja2.FileSystemLoader('.'))
-        template = env.get_template(
-            options['xml_template_filename'])
+        template = env.get_template('{}/{}'.format(
+            self.template_dir, options['xml_template_filename']))
         
         with open(options['xml_target_filename'], 'w') as f:
             f.write(template.render(
@@ -379,30 +385,5 @@ class WriteXml(SerialFunctor):
                 'threshold'  : ti[2] })
             msg += '\nwrote test: {} &{}; {}'.format(*ti)
         self.print_end(Success(msg), options)
-
-
-
-## STRATEGIES
-
-def get_error_from_field(options):
-    # settings
-    calc_type = 'integral'      # can be integral or l2norm
-    timestep_index = -1
-
-    stat_filename = options['simulation_name'] + '.stat'
-    check_file_exists(stat_filename)
-    stat = stat_parser(stat_filename)
-        
-    phase = options['phase_name']
-    var = options['error_variable_name']
-    try:
-        # n.b. assume the last timestep is required
-        return stat[phase][var][calc_type][timestep_index]
-    except KeyError:
-        raise Failure(
-            ("\nGetErrorFromField expected to find \n"+\
-             "{0}::{1} in the stat file; \n"+\
-             "has this been defined in the options file?").\
-            format(phase, var))
 
 
