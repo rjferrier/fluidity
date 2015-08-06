@@ -2,7 +2,7 @@
 wall_no_normal_flow_bc = """
         <boundary_conditions name="wall_flow">
           <surface_ids>
-            <integer_value shape="$WALL_NUM" rank="1">$WALL_IDS</integer_value>
+            <integer_value shape="$wall_num" rank="1">$wall_ids</integer_value>
           </surface_ids>
           <type name="no_normal_flow"/>
         </boundary_conditions>"""
@@ -24,7 +24,7 @@ gravity = """
           <mesh name="ElementWiseMesh"/>
           <value name="WholeMesh">
             <constant>
-              <real_value shape="$DIM_NUMBER" dim1="dim" rank="1">$GRAVITY_DIRECTION</real_value>
+              <real_value shape="$dim_number" dim1="dim" rank="1">$gravity_direction</real_value>
             </constant>
           </value>
         </prescribed>
@@ -38,12 +38,12 @@ quadratic_relperm_correlation = """
         <correlation name="PowerLaw">
           <exponents>
             <real_value shape="2" rank="1">2.0 2.0</real_value>
-          </exponents> $RESIDUAL_SATURATION_SNIPPET
+          </exponents> $residual_saturation_snippet
         </correlation>"""
 
 residual_saturations = """
           <residual_saturations>
-            <real_value shape="2" rank="1">$RESIDUAL_SATURATION1 $RESIDUAL_SATURATION2</real_value>
+            <real_value shape="2" rank="1">$residual_saturation1 $residual_saturation2</real_value>
           </residual_saturations>"""
 
 error_variable = """

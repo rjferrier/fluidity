@@ -1,6 +1,6 @@
-lx = $DOMAIN_LENGTH_X;
-ly = $DOMAIN_LENGTH_Y;
-dx = $EL_SIZE_X;
+lx = $domain_length_x;
+ly = $domain_length_y;
+dx = $el_size_x;
 
 Point(1) = {  0,  0, 0, dx};
 Point(2) = { lx,  0, 0, dx};

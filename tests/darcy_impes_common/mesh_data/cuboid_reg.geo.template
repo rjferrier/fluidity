@@ -1,10 +1,10 @@
-lx = $DOMAIN_LENGTH_X;
-ly = $DOMAIN_LENGTH_Y;
-lz = $DOMAIN_LENGTH_Z;
-nx = $EL_NUM_X;
-ny = $EL_NUM_Y;
-nz = $EL_NUM_Z;
-dx = $EL_SIZE_X;
+lx = $domain_length_x;
+ly = $domain_length_y;
+lz = $domain_length_z;
+nx = $el_num_x;
+ny = $el_num_y;
+nz = $el_num_z;
+dx = $el_size_x;
 
 Point(1) = {0, 0, 0, dx};
 Extrude {lx, 0, 0} {

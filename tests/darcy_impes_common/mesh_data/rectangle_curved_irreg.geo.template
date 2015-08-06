@@ -1,7 +1,7 @@
-lx = $DOMAIN_LENGTH_X;
-ly = $DOMAIN_LENGTH_Y;
-lz = $DOMAIN_LENGTH_Z;
-dx = $EL_SIZE_X;
+lx = $domain_length_x;
+ly = $domain_length_y;
+lz = $domain_length_z;
+dx = $el_size_x;
 sqrt2 = 1.4142135623730951;
 
 Point(1) = {  0,  0,  0, dx};

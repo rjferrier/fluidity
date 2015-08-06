@@ -2,10 +2,10 @@
 <darcy_impes_options>
   <geometry>
     <dimension>
-      <integer_value rank="0">$DIM_NUMBER</integer_value>
+      <integer_value rank="0">$dim_number</integer_value>
     </dimension>
     <mesh name="CoordinateMesh">
-      <from_file file_name="$MESH_NAME">
+      <from_file file_name="$mesh_prefix_relative_to_simulation/$mesh_name">
         <format name="gmsh"/>
         <stat>
           <include_in_stat/>
@@ -83,7 +83,7 @@
     </finish_time>
     <adaptive_timestep/>
   </timestepping>
-  <physical_parameters> $GRAVITY_SNIPPET
+  <physical_parameters> $gravity_snippet
   </physical_parameters>
   <material_phase name="Phase1">
     <scalar_field name="Pressure" rank="0">
@@ -111,7 +111,7 @@
         </initial_condition>
         <boundary_conditions name="right">
           <surface_ids>
-            <integer_value shape="1" rank="1">$OUTLET_ID</integer_value>
+            <integer_value shape="1" rank="1">$outlet_id</integer_value>
           </surface_ids>
           <type name="dirichlet">
             <apply_strongly/>
@@ -129,7 +129,7 @@
     <scalar_field name="Saturation" rank="0">
       <diagnostic>
         <mesh name="PressureMesh"/>
-        <algorithm name="Internal"/> $SAT_FACE_VALUE_SNIPPET
+        <algorithm name="Internal"/> $sat_face_value_snippet
         <convergence>
           <include_in_convergence/>
         </convergence>
@@ -142,8 +142,8 @@
     <scalar_field name="RelativePermeability" rank="0">
       <diagnostic>
         <mesh name="PressureMesh"/>
-        <algorithm name="Internal"/> $RELATIVE_PERMEABILITY_RELATION
-        <face_value name="$REL_PERM_FACE_VALUE"/>
+        <algorithm name="Internal"/> $relative_permeability_relation
+        <face_value name="$rel_perm_face_value"/>
         <stat>
           <include_cv_stats/>
         </stat>
@@ -185,10 +185,10 @@
         <algorithm name="Internal"/>
         <boundary_conditions name="left">
           <surface_ids>
-            <integer_value shape="1" rank="1">$INLET_ID</integer_value>
+            <integer_value shape="1" rank="1">$inlet_id</integer_value>
           </surface_ids>
           <type name="no_normal_flow"/>
-        </boundary_conditions> $WALL_FLOW_BC_SNIPPET
+        </boundary_conditions> $wall_flow_bc_snippet
         <stat>
           <include_cv_stats/>
         </stat>
@@ -302,7 +302,7 @@
         <mesh name="PressureMesh"/>
         <initial_condition name="WholeMesh">
           <constant>
-            <real_value rank="0">$INITIAL_SATURATION2</real_value>
+            <real_value rank="0">$initial_saturation2</real_value>
           </constant>
         </initial_condition>
         <convergence>
@@ -343,7 +343,7 @@
         <algorithm name="Internal"/>
         <equation_of_state name="IncompressibleLinear">
           <reference_density>
-            <real_value rank="0">$DENSITY2</real_value>
+            <real_value rank="0">$density2</real_value>
           </reference_density>
         </equation_of_state>
         <stat>
@@ -358,14 +358,14 @@
         <algorithm name="Internal"/>
         <boundary_conditions name="left">
           <surface_ids>
-            <integer_value shape="1" rank="1">$INLET_ID</integer_value>
+            <integer_value shape="1" rank="1">$inlet_id</integer_value>
           </surface_ids>
           <type name="prescribed_normal_flow">
             <constant>
               <real_value rank="0">-1.0</real_value>
             </constant>
           </type>
-        </boundary_conditions> $WALL_FLOW_BC_SNIPPET
+        </boundary_conditions> $wall_flow_bc_snippet
         <stat>
           <include_cv_stats/>
         </stat>
@@ -401,7 +401,7 @@
         </stat>
         <consistent_interpolation/>
       </diagnostic>
-    </scalar_field> $PRESSURE2_ERROR_SNIPPET $SATURATION2_ERROR_SNIPPET
+    </scalar_field> $pressure2_error_snippet $saturation2_error_snippet
   </material_phase>
   <porous_media>
     <scalar_field name="Porosity">
@@ -415,7 +415,7 @@
         <stat>
           <include_cv_stats/>
         </stat>
-      </prescribed>$FOO
+      </prescribed>
     </scalar_field>
     <scalar_field name="AbsolutePermeability">
       <prescribed>

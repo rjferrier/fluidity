@@ -1,6 +1,6 @@
-lx = $DOMAIN_LENGTH_X;
-nx = $EL_NUM_X;
-dx = $EL_SIZE_X;
+lx = $domain_length_x;
+nx = $el_num_x;
+dx = $el_size_x;
 
 Point(1) = {0, 0, 0, dx};
 

@@ -1,11 +1,11 @@
-from options import spatial_dict, dims, simulation_dict, testing_dict
+import darcy_impes_options as base
 from options_iteration import OptionsArray, OptionsNode
 from options_iteration.utilities import smap, pmap, ExpandTemplate, RunBinary,\
-    SimpleRendering
+    SimpleRendering, get_nprocs
 from darcy_impes_functors import WriteXml, StudyConvergence, \
     GetErrorFromField, GetErrorWithOneDimensionalSolution
 from buckley_leverett_tools import *
-from diml_snippets import *
+import diml_snippets as diml
 import os
 import errno
 import sys
@@ -15,7 +15,7 @@ import sys
 
 case_name = 'darcy_impes_p1_2phase_bl'
 simulation_naming_keys = ['subcase', 'submodel', 'dim', 'mesh_res']
-nprocs = 6
+nprocs_max = 6
 
 mesh_dir = 'meshes'
 simulation_dir = 'results'
@@ -25,7 +25,7 @@ simulation_dir = 'results'
 ## OPTIONS TREES
 
 # initialise top level of tree for meshing
-mesh_options_tree = dims
+mesh_options_tree = base.dims
 
 # only the second and third dimensions have a mesh type, and we will
 # use only the regular mesh type here
@@ -42,61 +42,56 @@ mesh_options_tree[2] *= OptionsArray('mesh_res', [10, 20])
 
 
 def get_reference_solution_filename(options, field):
-    return 'reference_solution/{0}_{1}.txt'.format(options['subcase'], field)
+    return 'reference_solution/{0}_{1}.txt'.format(options.subcase, field)
 
 def get_error_snippet(options, field, variable_name):
-    return error_variable.format(
-        options['subcase'], get_reference_solution_filename(options, field),
+    return diml.error_variable.format(
+        options.subcase, get_reference_solution_filename(options, field),
         variable_name)
+
+
+class p1satdiag:
+    gravity_snippet = ""
+    relative_permeability_relation = diml.quadratic_relperm_correlation
+    residual_saturation_snippet = ""
+    initial_saturation2 = 0.
+    density2 = 1.
+    def saturation2_error_snippet(self):
+        return get_error_snippet(self, 'saturation2', 'Saturation')
+    def pressure2_error_snippet(self):
+        return get_error_snippet(self, 'pressure2', 'Pressure')
+    # TO BE FIXED in options_iteration: should automatically get
+    # an {OptionsArray.name: OptionsNode.name} entry
+    subcase = 'p1satdiag'
+   
+class withgrav_updip:
+    gravity_snippet = diml.gravity
+    relative_permeability_relation = diml.quadratic_relperm_correlation
+    residual_saturation_snippet = diml.residual_saturations
+    residual_saturation1 = 0.1
+    residual_saturation2 = 0.1
+    initial_saturation2 = 0.1
+    density2 = 2.
+    def saturation2_error_snippet(self):
+        return get_error_snippet(self, 'saturation2', 'Saturation')
+    pressure2_error_snippet = ""
+    # TO BE FIXED in options_iteration: should automatically get
+    # an {OptionsArray.name: OptionsNode.name} entry
+    subcase = 'withgrav_updip'
     
-
-# define different groups of options that we're going to test.  Refer
-# to xml_snippets.py.
-subcases = OptionsArray('subcase', [
-    OptionsNode('p1satdiag', {
-        'GRAVITY_SNIPPET': "",
-        'RELATIVE_PERMEABILITY_RELATION': quadratic_relperm_correlation,
-        'RESIDUAL_SATURATION_SNIPPET': "",
-        'INITIAL_SATURATION2': 0.,
-        'DENSITY2': 1.,
-        'SATURATION2_ERROR_SNIPPET': lambda opt: get_error_snippet(
-            opt, 'saturation2', 'Saturation'),
-        'PRESSURE2_ERROR_SNIPPET': lambda opt: get_error_snippet(
-            opt, 'pressure2', 'Pressure'),
-        # TO BE FIXED in options_iteration: should automatically get
-        # an {OptionsArray.name: OptionsNode.name} entry
-        'subcase': 'p1satdiag', 
-    }),
-    
-    OptionsNode('withgrav_updip', {
-        'GRAVITY_SNIPPET': gravity,
-        'RELATIVE_PERMEABILITY_RELATION': quadratic_relperm_correlation,
-        'RESIDUAL_SATURATION_SNIPPET': residual_saturations,
-        'RESIDUAL_SATURATION1': 0.1,
-        'RESIDUAL_SATURATION2': 0.1,
-        'INITIAL_SATURATION2': 0.1,
-        'DENSITY2': 2.,
-        'SATURATION2_ERROR_SNIPPET': lambda opt: get_error_snippet(
-            opt, 'saturation2', 'Saturation'),
-        'PRESSURE2_ERROR_SNIPPET': "",
-        # TO BE FIXED in options_iteration: should automatically get
-        # an {OptionsArray.name: OptionsNode.name} entry
-        'subcase': 'withgrav_updip', 
-    }), 
-])
+subcases = OptionsArray('subcase', [p1satdiag, withgrav_updip])
 
 
-# and, orthogonally, some sub-models
-submodels = OptionsArray('submodel', [
-    OptionsNode('relpermupwind', {
-        'REL_PERM_FACE_VALUE': "FirstOrderUpwind",
-        'SAT_FACE_VALUE_SNIPPET': "",
-    }),
-    OptionsNode('modrelpermupwind', {
-        'REL_PERM_FACE_VALUE': "RelPermOverSatUpwind",
-        'SAT_FACE_VALUE_SNIPPET': sat_face_value_fe_sweby,
-    }),
-])
+class relpermupwind:
+    rel_perm_face_value = "FirstOrderUpwind"
+    sat_face_value_snippet = ""
+
+class modrelpermupwind:
+    rel_perm_face_value = "RelPermOverSatUpwind"
+    sat_face_value_snippet = diml.sat_face_value_fe_sweby
+
+submodels = OptionsArray('submodel', [relpermupwind, modrelpermupwind])
+
 
 # build simulation options tree on top of mesh_options_tree
 sim_options_tree = subcases * submodels * mesh_options_tree
@@ -105,64 +100,68 @@ sim_options_tree = subcases * submodels * mesh_options_tree
 # in certain fields
 test_options_tree = sim_options_tree * OptionsArray('field', ['saturation2'])
 
+nprocs = get_nprocs(sim_options_tree.count_leaves(),
+                    nprocs_max=nprocs_max)
 
-## DICTIONARIES
 
-# update entries in darcy_impes_common/options.py to suit this test
+## GLOBAL OPTIONS
+
+# update classes in darcy_impes_common/options.py to suit this test
 # case, and populate the trees accordingly.
 
-spatial_dict.update({
-    'domain_extents': (1., 1., 1.), 
-    'reference_element_nums': (10, 10, 10), 
-    'EL_NUM_Y': lambda opt: 2,
-    'EL_NUM_Z': lambda opt: 2,
-    'MESH_NAME': lambda opt: '../{}/{}'.format(mesh_dir, opt['mesh_name']),
-    'WALL_FLOW_BC_SNIPPET': lambda opt:
-        wall_no_normal_flow_bc if opt['dim_number'] > 1 else '',
-})
-mesh_options_tree.update(spatial_dict)
+class global_spatial_options(base.global_spatial_options):
+    domain_extents = (1.0, 1.2, 0.8)
+    reference_element_nums = (10, 12, 8)
+    el_num_y = 2
+    el_num_z = 2
+    def wall_flow_bc_snippet(self):
+        if self.dim_number == 1:
+            return ''
+        else:
+            return diml.wall_no_normal_flow_bc
+
+class global_simulation_options(base.global_simulation_options):
+    case = case_name
+    def simulation_name(self):
+        return self.str(simulation_naming_keys)
+    def mesh_prefix_relative_to_simulation(self):
+        return '../{}/'.format(mesh_dir)
 
 
-simulation_dict.update({
-    'case': case_name,
-    'naming_keys': None,        # DELETE?
-    # we're only using the 'reg' mesh type, so leave this out of the
-    # simulation IDs.
-    'excluded_naming_keys': ['mesh_type'], # DELETE?
-    'simulation_name': lambda opt: opt.str(simulation_naming_keys),
-})
-sim_options_tree.update(spatial_dict)
-sim_options_tree.update(simulation_dict)
-
-
-def max_error_norm(options):
-    """
-    Since we're already testing convergence rates, let's only test the
-    absolute error norm for the first mesh.
-    """
-    if options['mesh_res'] == 10:
-        if 'saturation' in options['field']:
-            return 0.1
-    return None
+class global_testing_options(base.global_testing_options):
+    case = case_name
+    user_id = 'rferrier'
+    nprocs = nprocs
+    xml_target_filename = 'darcy_impes_p1_2phase_bl.xml'
+    simulation_options_test_length = 'short'
+    min_convergence_rate = 0.7
+    test_harness_command_line = 'python script.py pre run post'
+    def report_filename(self): 
+        self.case + '_report.txt'
+    def error_variable_name(self): 
+        return self.variable_name + 'AbsError'
+    def max_error_norm(options):
+        """
+        Since we're already testing convergence rates, let's only test the
+        absolute error norm for the first mesh.
+        """
+        if self['mesh_res'] == 10:
+            if 'saturation' in self.field:
+                return 0.1
+        return None
     
-testing_dict.update({
-    'case': case_name,
-    'user_id': 'rferrier',
-    'nprocs': nprocs,
-    'xml_target_filename': 'darcy_impes_p1_2phase_bl.xml',
-    'simulation_options_test_length': 'short',
-    'reference_solution_filename': lambda opt: \
-        get_reference_solution_filename(opt, opt['field']),
-    'report_filename': lambda opt: opt['case'] + '_report.txt',
-    'min_convergence_rate': 0.7,
-    'max_error_norm': max_error_norm,
-    'error_variable_name': lambda opt: opt['variable_name'] + 'AbsError',
-    'test_harness_command_line': 'python script.py pre run post',
-})
+    def reference_solution_filename(self):
+        return get_reference_solution_filename(self, self.field)
+    
 
-test_options_tree.update(spatial_dict)
-test_options_tree.update(simulation_dict)
-test_options_tree.update(testing_dict)
+mesh_options_tree.update(global_spatial_options)
+
+sim_options_tree.update(global_spatial_options)
+sim_options_tree.update(global_simulation_options)
+
+test_options_tree.update(global_spatial_options)
+test_options_tree.update(global_simulation_options)
+test_options_tree.update(global_testing_options)
 
 
 
@@ -197,7 +196,7 @@ if 'pre' in commands:
     pmap("Meshing",
          RunBinary('meshing_args', 'geo_filename', 'mesh_name',
                    working_dir=mesh_dir),
-         mesh_options_tree, nprocs_max=nprocs, in_reverse=True)
+         mesh_options_tree, nprocs_max=nprocs_max, in_reverse=True)
 
     
     smap("Expanding options files",
@@ -213,7 +212,7 @@ if 'run' in commands:
          RunBinary('simulation_args',
                    'simulation_prerequisite_filenames',
                    'simulation_name', working_dir=simulation_dir),
-         sim_options_tree, nprocs_max=nprocs, in_reverse=True)
+         sim_options_tree, nprocs_max=nprocs_max, in_reverse=True)
     
 if 'post' in commands:
     smap('Postprocessing',
