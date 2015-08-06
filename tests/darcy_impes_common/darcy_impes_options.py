@@ -76,10 +76,16 @@ class global_spatial_options:
     # takes the form of a function, it will self-evaluate dynamically.
     def geo_template_name(self):
         return join((self.geometry, self.str(['geo_type', 'mesh_type'])))
+
+    # construct a name for the geometry template.  Because this entry
+    # takes the form of a function, it will self-evaluate dynamically.
+    def geo_template_name(self):
+        return 'orthotope_{}d'.format(self.dim_number)
         
     # likewise for the mesh name 
     def mesh_name(self):
-        return join((self.geo_template_name, self.str('mesh_res')))
+        return join((self.geometry,
+                     self.str(['geo_type', 'mesh_type', 'mesh_res'])))
         
     # etc.
     def geo_template_filename(self):

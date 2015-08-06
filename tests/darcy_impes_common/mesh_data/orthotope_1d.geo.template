@@ -1,10 +1,11 @@
 lx = $domain_length_x;
 nx = $el_num_x;
-dx = $el_size_x;
 
-Point(1) = {0, 0, 0, dx};
+Point(1) = {0, 0, 0};
 
-Extrude {lx, 0, 0} {
+// for some reason mesh adaptivity complains 
+// if this extrusion isn't done in reverse
+Extrude {-lx, 0, 0} {
   Point{1}; Layers{nx}; 
 }
 

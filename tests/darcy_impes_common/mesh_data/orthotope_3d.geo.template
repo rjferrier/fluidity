@@ -1,0 +1,37 @@
+lx = $domain_length_x;
+ly = $domain_length_y;
+lz = $domain_length_z;
+nx = $el_num_x;
+ny = $el_num_y;			// 0 => use dx
+nz = $el_num_z;			// 0 => use dx
+reg = $is_regular;		// 0 => False, 1 => True
+
+Point(1) = {0, 0, 0, lx/nx};
+If ( reg )
+  Extrude {lx, 0, 0} { Point{1}; Layers{nx}; }
+  
+  If ( !nz )
+    nz = Ceil(nx*lz/lx);
+  EndIf
+  Extrude {0, 0, lz} { Line{1}; Layers{nz}; }
+
+  If ( !ny )
+    ny = Ceil(nx*ly/lx);
+  EndIf
+  Extrude {0, ly, 0} { Surface{5}; Layers{ny}; }
+EndIf
+If ( !reg )
+  Extrude {lx, 0, 0} { Point{1}; }
+  Extrude {0, 0, lz} { Line{1}; }
+  Extrude {0, ly, 0} { Surface{5}; }
+EndIf
+
+
+Physical Surface(1) = {26};	// xmin
+Physical Surface(2) = {18};	// xmax
+Physical Surface(3) = {5};	// ymin
+Physical Surface(4) = {27};	// ymax
+Physical Surface(5) = {22};	// zmax
+Physical Surface(6) = {14};	// zmin
+Physical Volume(7) = {1};
+

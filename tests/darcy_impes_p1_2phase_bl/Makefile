@@ -5,7 +5,7 @@ include ../darcy_impes_common/Depend.mk
 input: pre run post
 
 pre: 
-	cp $(FLUIDITYPATH)/tests/darcy_impes_common/mesh_data/*geo.template .
+	cp $(FLUIDITYPATH)/tests/darcy_impes_common/mesh_data/*.geo.template .
 	python script.py pre 
 
 run: 

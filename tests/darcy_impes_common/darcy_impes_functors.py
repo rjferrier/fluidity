@@ -35,6 +35,7 @@ def read_reference_solution(filename):
             v.append(float(l.split()[1]))
     return sort(x, v)
 
+
 def read_numerical_solution(filename, field_descriptor):
     """
     Converts a vtu file into a list of x-coordinates and field
@@ -181,6 +182,9 @@ class StudyConvergence(SerialFunctor):
             
         self.print_end(Success(msg), options)
 
+
+# class WriteToFile(SerialFunctor):
+    
 
 class WriteXml(SerialFunctor):
     def __init__(self, convergence_abscissa_key, naming_keys=[],

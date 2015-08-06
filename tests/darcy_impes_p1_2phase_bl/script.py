@@ -4,7 +4,6 @@ from options_iteration.utilities import smap, pmap, ExpandTemplate, RunBinary,\
     SimpleRendering, get_nprocs
 from darcy_impes_functors import WriteXml, StudyConvergence, \
     GetErrorFromField, GetErrorWithOneDimensionalSolution
-from buckley_leverett_tools import *
 import diml_snippets as diml
 import os
 import errno
@@ -29,7 +28,11 @@ mesh_options_tree = base.dims
 
 # only the second and third dimensions have a mesh type, and we will
 # use only the regular mesh type here
-mesh_options_tree[1:] *= OptionsArray('mesh_type', ['reg'])
+class reg:
+    is_regular = 1
+class irreg:
+    is_regular = 0
+mesh_options_tree[1:] *= OptionsArray('mesh_type', [reg])
 
 # for MMS tests we usually assign mesh resolutions [10, 20, 40, 80] to
 # 1D, [10, 20, 40] to 2D, etc.  But in the BL case the solution
