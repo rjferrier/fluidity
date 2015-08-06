@@ -64,7 +64,8 @@ class dim3:
     wall_ids = "3 4 5 6"
     wall_num = 4
 
-dims = OptionsArray('dim', [dim1, dim2, dim3])
+dims = OptionsArray('dim', [dim1, dim2, dim3], 
+                    name_format=lambda s: s[-1]+'d')
 
     
 # define some universal options
@@ -135,7 +136,8 @@ class global_simulation_options:
         return [simulator_path, self.simulation_options_filename]
 
     def simulation_args(self):
-        return [simulator_path, self.simulation_options_filename]
+        return [os.path.normpath(simulator_path),
+                self.simulation_options_filename]
 
 
 ## TESTING/RESULTS 

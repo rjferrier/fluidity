@@ -53,56 +53,61 @@ def sort(x, v):
     return x, v
    
 
-class GetErrorFromField:
-    def __init__(self, results_dir='.'):
-        self.results_dir = results_dir
+def get_error_from_field(options, results_dir='.'):
+    stat_filename = '{}/{}.stat'.format(
+        results_dir, options['simulation_name'])
+    check_file_exists(stat_filename)
+    stat = stat_parser(stat_filename)
+    
+    phase = options['phase_name']
+    var = options['error_variable_name']
+    calc_type = options['error_calculation']
+    timestep_index = options['timestep_index']
+    try:
+        # n.b. assume the last timestep is required
+        return stat[phase][var][calc_type][timestep_index]
+    except KeyError:
+        raise Failure(
+            ("\nget_error_from_field expected to find \n"+\
+             "{0}::{1} in the stat file; \n"+\
+             "has this been defined in the options file?").\
+            format(phase, var))
 
-    def __call__(self, options):
-        # settings
-        calc_type = 'integral'      # can be integral or l2norm
-        timestep_index = -1
-        
-        stat_filename = '{}/{}.stat'.format(
-            self.results_dir, options['simulation_name'])
-        check_file_exists(stat_filename)
-        stat = stat_parser(stat_filename)
-        
-        phase = options['phase_name']
-        var = options['error_variable_name']
-        try:
-            # n.b. assume the last timestep is required
-            return stat[phase][var][calc_type][timestep_index]
-        except KeyError:
-            raise Failure(
-                ("\nGetErrorFromField expected to find \n"+\
-                 "{0}::{1} in the stat file; \n"+\
-                 "has this been defined in the options file?").\
-                format(phase, var))
- 
-        
-class GetErrorWithOneDimensionalSolution:
-    def __init__(self, results_dir='.'):
-        self.results_dir = results_dir
 
-    def __call__(self, options):
-        """
-        Computes the L1 norm.  Uniform, linear elements are assumed, so
-        the integral over the domain can be approximated by the
-        trapezium rule.
-        """
-        reference_filename = options['reference_solution_filename']
-        check_file_exists(reference_filename)        
-        [xa, va] = read_reference_solution(reference_filename)
+def render_error_from_field(options, results_dir='.'):
+    return """
+from fluidity_tools import stat_parser
+stat = stat_parser('{0}/{1}.stat')
+try:
+    return stat[{2}][{3}][{4}][{5}]
+except KeyError:
+    print '''
+Expected to find {2}::{3} in the stat file; 
+has this been defined in the options file?'''
+    raise""".format(results_dir, options['simulation_name'],
+           options['phase_name'], options['error_variable_name'],
+           options['error_calculation'], options['timestep_index'])
+
         
-        numerical_filename = '{}/{}'.format(
-            self.results_dir, options['vtu_filename'])
-        check_file_exists(numerical_filename)        
-        [xn, vn] = read_numerical_solution(numerical_filename,
-                                           options['field_descriptor'])
-        
-        vn_interp = numpy.interp(xa, xn, vn)
-        eps = numpy.abs(vn_interp - va)
-        return (eps[0]/2 + sum(eps[1:-1]) + eps[-1]/2)*options['EL_SIZE_X']
+def get_error_with_1d_solution(options, results_dir='.'):
+    """
+    Computes the L1 norm.  Uniform, linear elements are assumed, so
+    the integral over the domain can be approximated by the
+    trapezium rule.
+    """
+    reference_filename = options['reference_solution_filename']
+    check_file_exists(reference_filename)        
+    [xa, va] = read_reference_solution(reference_filename)
+    
+    numerical_filename = '{}/{}'.format(
+        results_dir, options['vtu_filename'])
+    check_file_exists(numerical_filename)        
+    [xn, vn] = read_numerical_solution(numerical_filename,
+                                       options['field_descriptor'])
+    
+    vn_interp = numpy.interp(xa, xn, vn)
+    eps = numpy.abs(vn_interp - va)
+    return (eps[0]/2 + sum(eps[1:-1]) + eps[-1]/2)*options['el_size_x']
 
 
 class StudyConvergence(SerialFunctor):
@@ -110,7 +115,7 @@ class StudyConvergence(SerialFunctor):
     rate_format = '{:.6f}'
 
     def __init__(self, abscissa_key,
-                 error_getter_class=GetErrorFromField,
+                 error_getter=get_error_from_field,
                  naming_keys=[], excluded_naming_keys=[],
                  source_dir='.', target_dir='.',
                  with_respect_to_resolution=False):
@@ -183,54 +188,153 @@ class StudyConvergence(SerialFunctor):
         self.print_end(Success(msg), options)
 
 
-# class WriteToFile(SerialFunctor):
-    
 
 class WriteXml(SerialFunctor):
-    def __init__(self, convergence_abscissa_key, naming_keys=[],
-                 excluded_naming_keys=[], template_dir='.'):
+    trim_blocks = True
+    lstrip_blocks = True
+
+    def __init__(self, convergence_abscissa_key, 
+                 error_renderer=render_error_from_field,
+                 naming_keys=[], excluded_naming_keys=[],
+                 template_dir='.', results_dir='.',
+                 with_respect_to_resolution=False):
+        
         if not HAVE_JINJA2:
             raise Exception('jinja2 not installed; needed by this functor')
         self.convergence_abscissa_key = convergence_abscissa_key
+        self.error_renderer = error_renderer
         self.naming_keys = naming_keys
         self.excluded_naming_keys = excluded_naming_keys
         self.template_dir = template_dir
+        self.results_dir = results_dir
+        self.with_respect_to_resolution = with_respect_to_resolution
         
     def setup(self, options):
-        self.tests = []
+        # the following lists will accumulate items as we loop over
+        # the tree
+        self.commands = []
+        self.variables = []
 
+        # the leaves of the options tree will overlap in meshing and
+        # simulation commands.  There are different ways of dealing
+        # with this, but the simplest is perhaps to keep a register to
+        # avoid duplicating commands.
+        self.register = []
+
+
+    def append_commands(self, options):
+        """
+        Appends a command line to the 'commands' list.  When teardown() is
+        called and the list is passed to the template engine, the
+        lines will get joined together.
+        """
+        msg = ''
+
+        if options['mesh_name'] not in self.register:
+            self.commands.append(' '.join(options['meshing_args']))
+            self.register.append(options['mesh_name'])
+        msg += '\nmesh command: ' + options['mesh_name']
+
+        if options['simulation_name'] not in self.register:
+            self.commands.append(' '.join(options['simulation_args']))
+            self.register.append(options['simulation_name'])
+        msg += '\nsimulation command: ' + options['simulation_name']
+
+        return msg
+
+        
+    def append_abscissa_variable(self, options):
+        name = 'abscissa_' + options.str(
+            only=self.naming_keys, exclude=self.excluded_naming_keys)
+        self.variables.append({
+            'name': name,
+            'code': '\n{} = {}'.format(
+                name, options[self.convergence_abscissa_key]),
+            'metric_type': 'abscissa',
+            'rel_op': None,
+            'threshold': None })
+        return '\n' + self.variables[-1]['name']
+
+        
+    def append_error_variable(self, options):
+        self.variables.append({
+            'name': 'error_' + options.str(
+                only=self.naming_keys, exclude=self.excluded_naming_keys),
+            'code': self.error_renderer(options, self.results_dir),
+            'metric_type': 'error',
+            'rel_op': 'lt',
+            'threshold': options.max_error_norm })
+        return '\n' + self.variables[-1]['name']
+
+
+    def get_rate_name(self, options):
+        stem = options.str(
+            only=self.naming_keys,
+            exclude=self.excluded_naming_keys+[self.convergence_abscissa_key])
+        # use the previous and current abscissae to form suffices for
+        # the name
+        try:
+            suf1 = options.str(only=[self.convergence_abscissa_key],
+                               relative={self.convergence_abscissa_key: -1})
+        except IndexError:
+            # abort if the previous one doesn't exist
+            return None
+        suf2 = options.str(only=[self.convergence_abscissa_key])
+        return 'rate_{}_{}_{}'.format(stem, suf1, suf2)        
+
+
+    def append_rate_variable(self, options):
+        name = self.get_rate_name(options)
+        if not name:
+            # abort if rate cannot be calculated
+            return ''
+        self.variables.append({
+            'name': name,
+            'code': self.render_rate(options, name),
+            'metric_type': 'rate',
+            'rel_op': 'gt',
+            'threshold': options.min_convergence_rate })
+        return '\n' + self.variables[-1]['name']
+
+
+    def render_rate(self, options, rate_name):
+        key = options.str(only=self.naming_keys,
+                          exclude=self.excluded_naming_keys)
+        key_prev = options.str(only=self.naming_keys,
+                               exclude=self.excluded_naming_keys,
+                               relative={self.convergence_abscissa_key: -1})
+        sign = '-' if self.with_respect_to_resolution else ''
+        return """
+import numpy
+current_abscissa = float(abscissa_{0})
+current_error = numpy.abs(error_{0})
+previous_abscissa = float(abscissa_{1})
+previous_error = numpy.abs(error_{1})
+{3} = \\
+    {2}numpy.log(current_error/previous_error) / \\
+    numpy.log(current_abscissa/previous_abscissa)""".format(
+        key, key_prev, sign, rate_name)
+
+
+    def __call__(self, options):
+        msg = ''
+        msg += self.append_commands(options)
+        msg += self.append_abscissa_variable(options)
+        msg += self.append_error_variable(options)
+        msg += self.append_rate_variable(options)
+        self.print_end(Success(msg), options)
+
+            
     def teardown(self, options):
-        # Import the Jinja 2 package here so that systems that don't
-        # have it can still use the other functors.
+        # fire up the template engine 
         env = jinja2.Environment(
             loader=jinja2.FileSystemLoader('.'))
         template = env.get_template('{}/{}'.format(
             self.template_dir, options.xml_template_filename))
-        
+
+        # pass it the final options dict, which will include general
+        # information, and the lists we've been building up
         with open(options.xml_target_filename, 'w') as f:
             f.write(template.render(
-                problem=options, tests=self.tests))
-            
-    def __call__(self, options):
-        test_info = [['error', 'lt', options.max_error_norm],
-                     ['rate',  'gt', options.min_convergence_rate]]
-        msg = ''
-        for ti in test_info:
-            # do not write a test if a threshold is not given
-            if not ti[2]:
-                continue
-            # do not write a convergence rate test if this is the
-            # first result in the series
-            if ti[0] == 'rate' and options.get_node_info(
-                    self.convergence_abscissa_key).is_first():
-                continue
-            self.tests.append({
-                'key': options.str(only=self.naming_keys,
-                                   exclude=self.excluded_naming_keys),
-                'metric_type': ti[0],
-                'rel_op'     : ti[1],
-                'threshold'  : ti[2] })
-            msg += '\nwrote test: {} &{}; {}'.format(*ti)
-        self.print_end(Success(msg), options)
-
-
+                problem=options, commands=self.commands,
+                variables=self.variables))

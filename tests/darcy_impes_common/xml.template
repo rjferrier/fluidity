@@ -4,26 +4,29 @@
   <name>{{ problem.case }}</name>
   <owner userid="{{ problem.user_id }}"/>
   <tags>{{ problem.simulation_options_extension }}</tags>
-  <problem_definition length="{{ problem.simulation_options_test_length }}" nprocs="{{ problem.nprocs }}">
+  <problem_definition length="{{ problem.simulation_options_test_length }}" nprocs="1">
     <command_line>
-# requisite commands are covered by `make input`
+{{ ' && \\ \n'.join(commands) }}
     </command_line>
   </problem_definition>
-  <variables/>
+
+  <variables>
+    {% for var in variables %}
+    <variable name="{{ var.name }}" language="python"> {{ var.code }}
+    </variable>       
+    {% endfor %}
+  </variables>
   <pass_tests>
     <test name="Solvers converged" language="python">
 import os
 files = os.listdir("./")
 assert(not "matrixdump" in files and not "matrixdump.info" in files)
-    </test> {% for test in tests %}
-    <test name="{{ test.key }}: expect {{ test.metric_type }} &{{ test.rel_op }}; {{ test.threshold }}" language="python">
-from sys import path
-path.append('../darcy_impes_common/')
-from functors import find_in_report
-val = find_in_report(
-    '{{ problem.report_filename }}', '{{ test.key }}', '{{ test.metric_type }}')
-assert(val &{{ test.rel_op }}; {{ test.threshold }})
-    </test> {% endfor %}
+    </test>
+    {% for var in variables %}{% if var.threshold %}
+    <test name="{{ var.name }} &{{ var.rel_op }}; {{ var.threshold }}" language="python"> 
+assert({{ var.name }} &{{ var.rel_op }}; {{ var.threshold }})
+    </test> 
+    {% endif %}{% endfor %}
   </pass_tests>
   <warn_tests>
   </warn_tests>

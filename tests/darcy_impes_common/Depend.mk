@@ -4,4 +4,4 @@
 # to this branch.
 export FLUIDITYPATH ?= $(CURDIR)/../../
 
-export PYTHONPATH := $(FLUIDITYPATH)/python:$(FLUIDITYPATH)/tools:$(FLUIDITYPATH)/tests/darcy_impes_common
+export PYTHONPATH := $(PYTHONPATH):$(FLUIDITYPATH)/python:$(FLUIDITYPATH)/tools:$(FLUIDITYPATH)/tests/darcy_impes_common

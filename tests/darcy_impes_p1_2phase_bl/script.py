@@ -3,7 +3,7 @@ from options_iteration import OptionsArray, OptionsNode
 from options_iteration.utilities import smap, pmap, ExpandTemplate, RunBinary,\
     SimpleRendering, get_nprocs
 from darcy_impes_functors import WriteXml, StudyConvergence, \
-    GetErrorFromField, GetErrorWithOneDimensionalSolution
+    get_error_from_field, get_error_with_1d_solution
 import diml_snippets as diml
 import os
 import errno
@@ -138,12 +138,13 @@ class global_testing_options(base.global_testing_options):
     xml_target_filename = 'darcy_impes_p1_2phase_bl.xml'
     simulation_options_test_length = 'short'
     min_convergence_rate = 0.7
-    test_harness_command_line = 'python script.py pre run post'
+    error_calculation = 'integral'
+    timestep_index = 'integral'
     def report_filename(self): 
         self.case + '_report.txt'
     def error_variable_name(self): 
         return self.variable_name + 'AbsError'
-    def max_error_norm(options):
+    def max_error_norm(self):
         """
         Since we're already testing convergence rates, let's only test the
         absolute error norm for the first mesh.
@@ -189,6 +190,7 @@ if 'pre' in commands:
     
 if 'xml' in commands:
     smap('Expanding XML file', WriteXml('mesh_res'), test_options_tree)
+    
     
 if 'pre' in commands:
     smap("Expanding geometry files",
