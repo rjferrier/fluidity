@@ -56,7 +56,7 @@ error_variable = """
    from sys import path
    path.append('../darcy_impes_common/')
    from buckley_leverett_test_tools import interp_using_analytic
-   afname = "reference_solution/{0}_{1}.txt"
+   afname = "../{1}"
    return interp_using_analytic(X[0], afname)</string_value>
           </python>
         </value>

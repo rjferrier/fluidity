@@ -1,12 +1,14 @@
-import sys
-sys.path.append('../darcy_impes_common')
 from options import spatial_dict, dims, simulation_dict, testing_dict
 from options_iteration import OptionsArray, OptionsNode
-from functors import *
+from options_iteration.utilities import smap, pmap, ExpandTemplate, RunBinary,\
+    SimpleRendering
+from darcy_impes_functors import WriteXml, StudyConvergence, \
+    GetErrorFromField, GetErrorWithOneDimensionalSolution
 from buckley_leverett_tools import *
 from diml_snippets import *
 import os
 import errno
+import sys
 
 
 ## SETTINGS
@@ -39,6 +41,15 @@ mesh_options_tree[1] *= OptionsArray('mesh_res', [10, 40])
 mesh_options_tree[2] *= OptionsArray('mesh_res', [10, 20])
 
 
+def get_reference_solution_filename(options, field):
+    return 'reference_solution/{0}_{1}.txt'.format(options['subcase'], field)
+
+def get_error_snippet(options, field, variable_name):
+    return error_variable.format(
+        options['subcase'], get_reference_solution_filename(options, field),
+        variable_name)
+    
+
 # define different groups of options that we're going to test.  Refer
 # to xml_snippets.py.
 subcases = OptionsArray('subcase', [
@@ -48,10 +59,13 @@ subcases = OptionsArray('subcase', [
         'RESIDUAL_SATURATION_SNIPPET': "",
         'INITIAL_SATURATION2': 0.,
         'DENSITY2': 1.,
-        'SATURATION2_ERROR_SNIPPET': error_variable.format(
-            'p1satdiag', 'saturation2', 'Saturation'),
-        'PRESSURE2_ERROR_SNIPPET': error_variable.format(
-            'p1satdiag', 'pressure2', 'Pressure'),
+        'SATURATION2_ERROR_SNIPPET': lambda opt: get_error_snippet(
+            opt, 'saturation2', 'Saturation'),
+        'PRESSURE2_ERROR_SNIPPET': lambda opt: get_error_snippet(
+            opt, 'pressure2', 'Pressure'),
+        # TO BE FIXED in options_iteration: should automatically get
+        # an {OptionsArray.name: OptionsNode.name} entry
+        'subcase': 'p1satdiag', 
     }),
     
     OptionsNode('withgrav_updip', {
@@ -62,11 +76,15 @@ subcases = OptionsArray('subcase', [
         'RESIDUAL_SATURATION2': 0.1,
         'INITIAL_SATURATION2': 0.1,
         'DENSITY2': 2.,
-        'SATURATION2_ERROR_SNIPPET': error_variable.format(
-            'withgrav_updip', 'saturation2', 'Saturation'),
+        'SATURATION2_ERROR_SNIPPET': lambda opt: get_error_snippet(
+            opt, 'saturation2', 'Saturation'),
         'PRESSURE2_ERROR_SNIPPET': "",
-    }),
+        # TO BE FIXED in options_iteration: should automatically get
+        # an {OptionsArray.name: OptionsNode.name} entry
+        'subcase': 'withgrav_updip', 
+    }), 
 ])
+
 
 # and, orthogonally, some sub-models
 submodels = OptionsArray('submodel', [
@@ -98,7 +116,7 @@ spatial_dict.update({
     'reference_element_nums': (10, 10, 10), 
     'EL_NUM_Y': lambda opt: 2,
     'EL_NUM_Z': lambda opt: 2,
-    'MESH_NAME': lambda opt: '{}/{}'.format(mesh_dir, opt['mesh_name']),
+    'MESH_NAME': lambda opt: '../{}/{}'.format(mesh_dir, opt['mesh_name']),
     'WALL_FLOW_BC_SNIPPET': lambda opt:
         wall_no_normal_flow_bc if opt['dim_number'] > 1 else '',
 })
@@ -133,8 +151,8 @@ testing_dict.update({
     'nprocs': nprocs,
     'xml_target_filename': 'darcy_impes_p1_2phase_bl.xml',
     'simulation_options_test_length': 'short',
-    'reference_solution_filename': 'reference_solution/'+
-        'analytic_BL_QuadraticPerm_withgravity_updip_saturation2.txt',
+    'reference_solution_filename': lambda opt: \
+        get_reference_solution_filename(opt, opt['field']),
     'report_filename': lambda opt: opt['case'] + '_report.txt',
     'min_convergence_rate': 0.7,
     'max_error_norm': max_error_norm,
@@ -168,7 +186,7 @@ if 'pre' in commands:
 
     
 if 'xml' in commands:
-    smap('Expanding XML file', WriteXml(), test_options_tree)
+    smap('Expanding XML file', WriteXml('mesh_res'), test_options_tree)
     
 if 'pre' in commands:
     smap("Expanding geometry files",
@@ -176,23 +194,31 @@ if 'pre' in commands:
              'geo_template_filename', 'geo_filename', target_dir=mesh_dir),
          mesh_options_tree)
     
-    pmap("Meshing", Mesh(working_dir=mesh_dir),
-         mesh_options_tree, default_nprocs=nprocs)
+    pmap("Meshing",
+         RunBinary('meshing_args', 'geo_filename', 'mesh_name',
+                   working_dir=mesh_dir),
+         mesh_options_tree, nprocs_max=nprocs, in_reverse=True)
+
     
     smap("Expanding options files",
          ExpandTemplate(
              'simulation_options_template_filename',
-             'simulation_options_filename', target_dir=simulation_dir),
+             'simulation_options_filename', target_dir=simulation_dir,
+             rendering_strategy=SimpleRendering(nloops=5)),
          sim_options_tree)
 
     
 if 'run' in commands:
-    pmap('Running simulations',
-         Simulate('../../bin/darcy_impes', working_dir=simulation_dir),
-         sim_options_tree, default_nprocs=nprocs)
+    pmap("Running simulations",
+         RunBinary('simulation_args',
+                   'simulation_prerequisite_filenames',
+                   'simulation_name', working_dir=simulation_dir),
+         sim_options_tree, nprocs_max=nprocs, in_reverse=True)
     
 if 'post' in commands:
     smap('Postprocessing',
-         Postprocess(GetErrorFromField, results_dir=simulation_dir),
+         StudyConvergence('mesh_res', GetErrorFromField,
+                          source_dir=simulation_dir,
+                          with_respect_to_resolution=True),
          test_options_tree)
     

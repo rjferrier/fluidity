@@ -18,7 +18,10 @@ Note:
 """
 
 from options_iteration import OptionsDict, OptionsNode, OptionsArray
+import os
 import re
+
+simulator_path = os.getenv('FLUIDITYPATH') + '/bin/darcy_impes'
 
 
 ## HELPERS
@@ -86,6 +89,10 @@ spatial_dict = OptionsDict({
         opt['geo_template_name'] + '.geo.template',
     'geo_filename' : lambda opt: opt['mesh_name'] + '.geo',
     'mesh_filename' : lambda opt: opt['mesh_name'] + '.msh',
+
+    'meshing_args': lambda opt:
+    ['gmsh', '-'+str(opt['dim_number']), opt['geo_filename'], '-o',
+     opt['mesh_filename']],
 })
 
 # add some expansions in x, y and z
@@ -119,8 +126,14 @@ simulation_dict = OptionsDict({
     '{}.{}.template'.format(opt['case'], opt['simulation_options_extension']),
     
     'simulation_options_filename': lambda opt: 
-        '{}.{}'.format(opt['simulation_name'],
-                       opt['simulation_options_extension']),
+     '{}.{}'.format(opt['simulation_name'],
+                    opt['simulation_options_extension']),
+
+    'simulation_args': lambda opt:
+    [simulator_path, opt['simulation_options_filename']],
+
+    'simulation_prerequisite_filenames': lambda opt:
+    [simulator_path, opt['simulation_options_filename']],
 })
 
 

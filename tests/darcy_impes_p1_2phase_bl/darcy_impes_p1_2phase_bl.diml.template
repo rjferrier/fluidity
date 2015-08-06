@@ -415,7 +415,7 @@
         <stat>
           <include_cv_stats/>
         </stat>
-      </prescribed>
+      </prescribed>$FOO
     </scalar_field>
     <scalar_field name="AbsolutePermeability">
       <prescribed>
