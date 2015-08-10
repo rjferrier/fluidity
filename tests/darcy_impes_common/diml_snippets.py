@@ -53,11 +53,11 @@ error_variable = """
         <value name="WholeMesh">
           <python>
             <string_value lines="20" type="code" language="python">def val(X, t):
-   from sys import path
-   path.append('../darcy_impes_common/')
-   from buckley_leverett_test_tools import interp_using_analytic
-   afname = "../{1}"
-   return interp_using_analytic(X[0], afname)</string_value>
+    import numpy
+    data = numpy.fromfile('../{1}', 
+                          sep='\t')
+    data = data.reshape((len(data)/2, 2))
+    return numpy.interp(X[0], data[:,0], data[:,1])</string_value>
           </python>
         </value>
         <stat>

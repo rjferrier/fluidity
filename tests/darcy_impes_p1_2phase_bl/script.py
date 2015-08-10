@@ -193,7 +193,8 @@ if 'pre' in commands:
 if 'xml' in commands:
     smap('Expanding XML file',
          WriteXml('mesh_res', mesh_dir=mesh_dir, 
-                  simulation_dir=simulation_dir),
+                  simulation_dir=simulation_dir,
+                  with_respect_to_resolution=True),
          test_options_tree)
     
     

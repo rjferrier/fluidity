@@ -13,30 +13,54 @@ gmsh -2 rectangle_reg_10.geo -o rectangle_reg_10.msh
 gmsh -2 rectangle_reg_40.geo -o rectangle_reg_40.msh
 gmsh -3 cuboid_reg_10.geo -o cuboid_reg_10.msh
 gmsh -3 cuboid_reg_20.geo -o cuboid_reg_20.msh
-cd ../simulations
+cd ../'simulations'
+echo "Running p1satdiag_relpermupwind_1d_10"
 ../../../bin/darcy_impes p1satdiag_relpermupwind_1d_10.diml
+echo "Running p1satdiag_relpermupwind_1d_80"
 ../../../bin/darcy_impes p1satdiag_relpermupwind_1d_80.diml
+echo "Running p1satdiag_relpermupwind_2d_10"
 ../../../bin/darcy_impes p1satdiag_relpermupwind_2d_10.diml
+echo "Running p1satdiag_relpermupwind_2d_40"
 ../../../bin/darcy_impes p1satdiag_relpermupwind_2d_40.diml
+echo "Running p1satdiag_relpermupwind_3d_10"
 ../../../bin/darcy_impes p1satdiag_relpermupwind_3d_10.diml
+echo "Running p1satdiag_relpermupwind_3d_20"
 ../../../bin/darcy_impes p1satdiag_relpermupwind_3d_20.diml
+echo "Running p1satdiag_modrelpermupwind_1d_10"
 ../../../bin/darcy_impes p1satdiag_modrelpermupwind_1d_10.diml
+echo "Running p1satdiag_modrelpermupwind_1d_80"
 ../../../bin/darcy_impes p1satdiag_modrelpermupwind_1d_80.diml
+echo "Running p1satdiag_modrelpermupwind_2d_10"
 ../../../bin/darcy_impes p1satdiag_modrelpermupwind_2d_10.diml
+echo "Running p1satdiag_modrelpermupwind_2d_40"
 ../../../bin/darcy_impes p1satdiag_modrelpermupwind_2d_40.diml
+echo "Running p1satdiag_modrelpermupwind_3d_10"
 ../../../bin/darcy_impes p1satdiag_modrelpermupwind_3d_10.diml
+echo "Running p1satdiag_modrelpermupwind_3d_20"
 ../../../bin/darcy_impes p1satdiag_modrelpermupwind_3d_20.diml
+echo "Running withgrav_updip_relpermupwind_1d_10"
 ../../../bin/darcy_impes withgrav_updip_relpermupwind_1d_10.diml
+echo "Running withgrav_updip_relpermupwind_1d_80"
 ../../../bin/darcy_impes withgrav_updip_relpermupwind_1d_80.diml
+echo "Running withgrav_updip_relpermupwind_2d_10"
 ../../../bin/darcy_impes withgrav_updip_relpermupwind_2d_10.diml
+echo "Running withgrav_updip_relpermupwind_2d_40"
 ../../../bin/darcy_impes withgrav_updip_relpermupwind_2d_40.diml
+echo "Running withgrav_updip_relpermupwind_3d_10"
 ../../../bin/darcy_impes withgrav_updip_relpermupwind_3d_10.diml
+echo "Running withgrav_updip_relpermupwind_3d_20"
 ../../../bin/darcy_impes withgrav_updip_relpermupwind_3d_20.diml
+echo "Running withgrav_updip_modrelpermupwind_1d_10"
 ../../../bin/darcy_impes withgrav_updip_modrelpermupwind_1d_10.diml
+echo "Running withgrav_updip_modrelpermupwind_1d_80"
 ../../../bin/darcy_impes withgrav_updip_modrelpermupwind_1d_80.diml
+echo "Running withgrav_updip_modrelpermupwind_2d_10"
 ../../../bin/darcy_impes withgrav_updip_modrelpermupwind_2d_10.diml
+echo "Running withgrav_updip_modrelpermupwind_2d_40"
 ../../../bin/darcy_impes withgrav_updip_modrelpermupwind_2d_40.diml
+echo "Running withgrav_updip_modrelpermupwind_3d_10"
 ../../../bin/darcy_impes withgrav_updip_modrelpermupwind_3d_10.diml
+echo "Running withgrav_updip_modrelpermupwind_3d_20"
 ../../../bin/darcy_impes withgrav_updip_modrelpermupwind_3d_20.diml
 cd ..
     </command_line>
@@ -45,622 +69,682 @@ cd ..
     
     <variable name="abscissa_p1satdiag_relpermupwind_1d_10_saturation2" language="python"> 
 abscissa_p1satdiag_relpermupwind_1d_10_saturation2 = 10
-    </variable>       
+    </variable>
     
     <variable name="error_p1satdiag_relpermupwind_1d_10_saturation2" language="python"> 
 from fluidity_tools import stat_parser
 stat = stat_parser('simulations/p1satdiag_relpermupwind_1d_10.stat')
 try:
-    return stat['Phase2']['SaturationAbsError']['integral'][-1]
+    error_p1satdiag_relpermupwind_1d_10_saturation2 = stat['Phase2']['SaturationAbsError']['integral'][-1]
 except KeyError:
     print '''
 Expected to find Phase2::SaturationAbsError in the stat file; 
 has this been defined in the options file?'''
     raise
-    </variable>       
+    </variable>
     
     <variable name="abscissa_p1satdiag_relpermupwind_1d_80_saturation2" language="python"> 
 abscissa_p1satdiag_relpermupwind_1d_80_saturation2 = 80
-    </variable>       
+    </variable>
     
     <variable name="error_p1satdiag_relpermupwind_1d_80_saturation2" language="python"> 
 from fluidity_tools import stat_parser
 stat = stat_parser('simulations/p1satdiag_relpermupwind_1d_80.stat')
 try:
-    return stat['Phase2']['SaturationAbsError']['integral'][-1]
+    error_p1satdiag_relpermupwind_1d_80_saturation2 = stat['Phase2']['SaturationAbsError']['integral'][-1]
 except KeyError:
     print '''
 Expected to find Phase2::SaturationAbsError in the stat file; 
 has this been defined in the options file?'''
     raise
-    </variable>       
+    </variable>
     
-    <variable name="rate_p1satdiag_relpermupwind_1d_saturation2_10_80" language="python"> 
+    <variable name="abscissa_p1satdiag_relpermupwind_2d_reg_10_saturation2" language="python"> 
+abscissa_p1satdiag_relpermupwind_2d_reg_10_saturation2 = 10
+    </variable>
+    
+    <variable name="error_p1satdiag_relpermupwind_2d_reg_10_saturation2" language="python"> 
+from fluidity_tools import stat_parser
+stat = stat_parser('simulations/p1satdiag_relpermupwind_2d_10.stat')
+try:
+    error_p1satdiag_relpermupwind_2d_reg_10_saturation2 = stat['Phase2']['SaturationAbsError']['integral'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    
+    <variable name="abscissa_p1satdiag_relpermupwind_2d_reg_40_saturation2" language="python"> 
+abscissa_p1satdiag_relpermupwind_2d_reg_40_saturation2 = 40
+    </variable>
+    
+    <variable name="error_p1satdiag_relpermupwind_2d_reg_40_saturation2" language="python"> 
+from fluidity_tools import stat_parser
+stat = stat_parser('simulations/p1satdiag_relpermupwind_2d_40.stat')
+try:
+    error_p1satdiag_relpermupwind_2d_reg_40_saturation2 = stat['Phase2']['SaturationAbsError']['integral'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    
+    <variable name="abscissa_p1satdiag_relpermupwind_3d_reg_10_saturation2" language="python"> 
+abscissa_p1satdiag_relpermupwind_3d_reg_10_saturation2 = 10
+    </variable>
+    
+    <variable name="error_p1satdiag_relpermupwind_3d_reg_10_saturation2" language="python"> 
+from fluidity_tools import stat_parser
+stat = stat_parser('simulations/p1satdiag_relpermupwind_3d_10.stat')
+try:
+    error_p1satdiag_relpermupwind_3d_reg_10_saturation2 = stat['Phase2']['SaturationAbsError']['integral'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    
+    <variable name="abscissa_p1satdiag_relpermupwind_3d_reg_20_saturation2" language="python"> 
+abscissa_p1satdiag_relpermupwind_3d_reg_20_saturation2 = 20
+    </variable>
+    
+    <variable name="error_p1satdiag_relpermupwind_3d_reg_20_saturation2" language="python"> 
+from fluidity_tools import stat_parser
+stat = stat_parser('simulations/p1satdiag_relpermupwind_3d_20.stat')
+try:
+    error_p1satdiag_relpermupwind_3d_reg_20_saturation2 = stat['Phase2']['SaturationAbsError']['integral'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    
+    <variable name="abscissa_p1satdiag_modrelpermupwind_1d_10_saturation2" language="python"> 
+abscissa_p1satdiag_modrelpermupwind_1d_10_saturation2 = 10
+    </variable>
+    
+    <variable name="error_p1satdiag_modrelpermupwind_1d_10_saturation2" language="python"> 
+from fluidity_tools import stat_parser
+stat = stat_parser('simulations/p1satdiag_modrelpermupwind_1d_10.stat')
+try:
+    error_p1satdiag_modrelpermupwind_1d_10_saturation2 = stat['Phase2']['SaturationAbsError']['integral'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    
+    <variable name="abscissa_p1satdiag_modrelpermupwind_1d_80_saturation2" language="python"> 
+abscissa_p1satdiag_modrelpermupwind_1d_80_saturation2 = 80
+    </variable>
+    
+    <variable name="error_p1satdiag_modrelpermupwind_1d_80_saturation2" language="python"> 
+from fluidity_tools import stat_parser
+stat = stat_parser('simulations/p1satdiag_modrelpermupwind_1d_80.stat')
+try:
+    error_p1satdiag_modrelpermupwind_1d_80_saturation2 = stat['Phase2']['SaturationAbsError']['integral'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    
+    <variable name="abscissa_p1satdiag_modrelpermupwind_2d_reg_10_saturation2" language="python"> 
+abscissa_p1satdiag_modrelpermupwind_2d_reg_10_saturation2 = 10
+    </variable>
+    
+    <variable name="error_p1satdiag_modrelpermupwind_2d_reg_10_saturation2" language="python"> 
+from fluidity_tools import stat_parser
+stat = stat_parser('simulations/p1satdiag_modrelpermupwind_2d_10.stat')
+try:
+    error_p1satdiag_modrelpermupwind_2d_reg_10_saturation2 = stat['Phase2']['SaturationAbsError']['integral'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    
+    <variable name="abscissa_p1satdiag_modrelpermupwind_2d_reg_40_saturation2" language="python"> 
+abscissa_p1satdiag_modrelpermupwind_2d_reg_40_saturation2 = 40
+    </variable>
+    
+    <variable name="error_p1satdiag_modrelpermupwind_2d_reg_40_saturation2" language="python"> 
+from fluidity_tools import stat_parser
+stat = stat_parser('simulations/p1satdiag_modrelpermupwind_2d_40.stat')
+try:
+    error_p1satdiag_modrelpermupwind_2d_reg_40_saturation2 = stat['Phase2']['SaturationAbsError']['integral'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    
+    <variable name="abscissa_p1satdiag_modrelpermupwind_3d_reg_10_saturation2" language="python"> 
+abscissa_p1satdiag_modrelpermupwind_3d_reg_10_saturation2 = 10
+    </variable>
+    
+    <variable name="error_p1satdiag_modrelpermupwind_3d_reg_10_saturation2" language="python"> 
+from fluidity_tools import stat_parser
+stat = stat_parser('simulations/p1satdiag_modrelpermupwind_3d_10.stat')
+try:
+    error_p1satdiag_modrelpermupwind_3d_reg_10_saturation2 = stat['Phase2']['SaturationAbsError']['integral'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    
+    <variable name="abscissa_p1satdiag_modrelpermupwind_3d_reg_20_saturation2" language="python"> 
+abscissa_p1satdiag_modrelpermupwind_3d_reg_20_saturation2 = 20
+    </variable>
+    
+    <variable name="error_p1satdiag_modrelpermupwind_3d_reg_20_saturation2" language="python"> 
+from fluidity_tools import stat_parser
+stat = stat_parser('simulations/p1satdiag_modrelpermupwind_3d_20.stat')
+try:
+    error_p1satdiag_modrelpermupwind_3d_reg_20_saturation2 = stat['Phase2']['SaturationAbsError']['integral'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    
+    <variable name="abscissa_withgrav_updip_relpermupwind_1d_10_saturation2" language="python"> 
+abscissa_withgrav_updip_relpermupwind_1d_10_saturation2 = 10
+    </variable>
+    
+    <variable name="error_withgrav_updip_relpermupwind_1d_10_saturation2" language="python"> 
+from fluidity_tools import stat_parser
+stat = stat_parser('simulations/withgrav_updip_relpermupwind_1d_10.stat')
+try:
+    error_withgrav_updip_relpermupwind_1d_10_saturation2 = stat['Phase2']['SaturationAbsError']['integral'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    
+    <variable name="abscissa_withgrav_updip_relpermupwind_1d_80_saturation2" language="python"> 
+abscissa_withgrav_updip_relpermupwind_1d_80_saturation2 = 80
+    </variable>
+    
+    <variable name="error_withgrav_updip_relpermupwind_1d_80_saturation2" language="python"> 
+from fluidity_tools import stat_parser
+stat = stat_parser('simulations/withgrav_updip_relpermupwind_1d_80.stat')
+try:
+    error_withgrav_updip_relpermupwind_1d_80_saturation2 = stat['Phase2']['SaturationAbsError']['integral'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    
+    <variable name="abscissa_withgrav_updip_relpermupwind_2d_reg_10_saturation2" language="python"> 
+abscissa_withgrav_updip_relpermupwind_2d_reg_10_saturation2 = 10
+    </variable>
+    
+    <variable name="error_withgrav_updip_relpermupwind_2d_reg_10_saturation2" language="python"> 
+from fluidity_tools import stat_parser
+stat = stat_parser('simulations/withgrav_updip_relpermupwind_2d_10.stat')
+try:
+    error_withgrav_updip_relpermupwind_2d_reg_10_saturation2 = stat['Phase2']['SaturationAbsError']['integral'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    
+    <variable name="abscissa_withgrav_updip_relpermupwind_2d_reg_40_saturation2" language="python"> 
+abscissa_withgrav_updip_relpermupwind_2d_reg_40_saturation2 = 40
+    </variable>
+    
+    <variable name="error_withgrav_updip_relpermupwind_2d_reg_40_saturation2" language="python"> 
+from fluidity_tools import stat_parser
+stat = stat_parser('simulations/withgrav_updip_relpermupwind_2d_40.stat')
+try:
+    error_withgrav_updip_relpermupwind_2d_reg_40_saturation2 = stat['Phase2']['SaturationAbsError']['integral'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    
+    <variable name="abscissa_withgrav_updip_relpermupwind_3d_reg_10_saturation2" language="python"> 
+abscissa_withgrav_updip_relpermupwind_3d_reg_10_saturation2 = 10
+    </variable>
+    
+    <variable name="error_withgrav_updip_relpermupwind_3d_reg_10_saturation2" language="python"> 
+from fluidity_tools import stat_parser
+stat = stat_parser('simulations/withgrav_updip_relpermupwind_3d_10.stat')
+try:
+    error_withgrav_updip_relpermupwind_3d_reg_10_saturation2 = stat['Phase2']['SaturationAbsError']['integral'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    
+    <variable name="abscissa_withgrav_updip_relpermupwind_3d_reg_20_saturation2" language="python"> 
+abscissa_withgrav_updip_relpermupwind_3d_reg_20_saturation2 = 20
+    </variable>
+    
+    <variable name="error_withgrav_updip_relpermupwind_3d_reg_20_saturation2" language="python"> 
+from fluidity_tools import stat_parser
+stat = stat_parser('simulations/withgrav_updip_relpermupwind_3d_20.stat')
+try:
+    error_withgrav_updip_relpermupwind_3d_reg_20_saturation2 = stat['Phase2']['SaturationAbsError']['integral'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    
+    <variable name="abscissa_withgrav_updip_modrelpermupwind_1d_10_saturation2" language="python"> 
+abscissa_withgrav_updip_modrelpermupwind_1d_10_saturation2 = 10
+    </variable>
+    
+    <variable name="error_withgrav_updip_modrelpermupwind_1d_10_saturation2" language="python"> 
+from fluidity_tools import stat_parser
+stat = stat_parser('simulations/withgrav_updip_modrelpermupwind_1d_10.stat')
+try:
+    error_withgrav_updip_modrelpermupwind_1d_10_saturation2 = stat['Phase2']['SaturationAbsError']['integral'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    
+    <variable name="abscissa_withgrav_updip_modrelpermupwind_1d_80_saturation2" language="python"> 
+abscissa_withgrav_updip_modrelpermupwind_1d_80_saturation2 = 80
+    </variable>
+    
+    <variable name="error_withgrav_updip_modrelpermupwind_1d_80_saturation2" language="python"> 
+from fluidity_tools import stat_parser
+stat = stat_parser('simulations/withgrav_updip_modrelpermupwind_1d_80.stat')
+try:
+    error_withgrav_updip_modrelpermupwind_1d_80_saturation2 = stat['Phase2']['SaturationAbsError']['integral'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    
+    <variable name="abscissa_withgrav_updip_modrelpermupwind_2d_reg_10_saturation2" language="python"> 
+abscissa_withgrav_updip_modrelpermupwind_2d_reg_10_saturation2 = 10
+    </variable>
+    
+    <variable name="error_withgrav_updip_modrelpermupwind_2d_reg_10_saturation2" language="python"> 
+from fluidity_tools import stat_parser
+stat = stat_parser('simulations/withgrav_updip_modrelpermupwind_2d_10.stat')
+try:
+    error_withgrav_updip_modrelpermupwind_2d_reg_10_saturation2 = stat['Phase2']['SaturationAbsError']['integral'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    
+    <variable name="abscissa_withgrav_updip_modrelpermupwind_2d_reg_40_saturation2" language="python"> 
+abscissa_withgrav_updip_modrelpermupwind_2d_reg_40_saturation2 = 40
+    </variable>
+    
+    <variable name="error_withgrav_updip_modrelpermupwind_2d_reg_40_saturation2" language="python"> 
+from fluidity_tools import stat_parser
+stat = stat_parser('simulations/withgrav_updip_modrelpermupwind_2d_40.stat')
+try:
+    error_withgrav_updip_modrelpermupwind_2d_reg_40_saturation2 = stat['Phase2']['SaturationAbsError']['integral'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    
+    <variable name="abscissa_withgrav_updip_modrelpermupwind_3d_reg_10_saturation2" language="python"> 
+abscissa_withgrav_updip_modrelpermupwind_3d_reg_10_saturation2 = 10
+    </variable>
+    
+    <variable name="error_withgrav_updip_modrelpermupwind_3d_reg_10_saturation2" language="python"> 
+from fluidity_tools import stat_parser
+stat = stat_parser('simulations/withgrav_updip_modrelpermupwind_3d_10.stat')
+try:
+    error_withgrav_updip_modrelpermupwind_3d_reg_10_saturation2 = stat['Phase2']['SaturationAbsError']['integral'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    
+    <variable name="abscissa_withgrav_updip_modrelpermupwind_3d_reg_20_saturation2" language="python"> 
+abscissa_withgrav_updip_modrelpermupwind_3d_reg_20_saturation2 = 20
+    </variable>
+    
+    <variable name="error_withgrav_updip_modrelpermupwind_3d_reg_20_saturation2" language="python"> 
+from fluidity_tools import stat_parser
+stat = stat_parser('simulations/withgrav_updip_modrelpermupwind_3d_20.stat')
+try:
+    error_withgrav_updip_modrelpermupwind_3d_reg_20_saturation2 = stat['Phase2']['SaturationAbsError']['integral'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    
+  </variables>
+  <pass_tests>
+    <test name="Solvers converged" language="python">
+import os
+files = os.listdir('simulations')
+assert("matrixdump" not in files and "matrixdump.info" not in files)
+    </test>
+    
+    <test name="error_p1satdiag_relpermupwind_1d_10_saturation2 &lt; 0.1" language="python"> 
+try:
+    assert(error_p1satdiag_relpermupwind_1d_10_saturation2 &lt; 0.1)
+except AssertionError:
+    print error_p1satdiag_relpermupwind_1d_10_saturation2
+    raise
+    </test> 
+    
+    <test name="rate_p1satdiag_relpermupwind_1d_saturation2_10_80 &gt; 0.7" language="python"> 
 import numpy
 current_abscissa = float(abscissa_p1satdiag_relpermupwind_1d_80_saturation2)
 current_error = numpy.abs(error_p1satdiag_relpermupwind_1d_80_saturation2)
 previous_abscissa = float(abscissa_p1satdiag_relpermupwind_1d_10_saturation2)
 previous_error = numpy.abs(error_p1satdiag_relpermupwind_1d_10_saturation2)
 rate_p1satdiag_relpermupwind_1d_saturation2_10_80 = \
-    numpy.log(current_error/previous_error) / \
+    -numpy.log(current_error/previous_error) / \
     numpy.log(current_abscissa/previous_abscissa)
-    </variable>       
-    
-    <variable name="abscissa_p1satdiag_relpermupwind_2d_reg_10_saturation2" language="python"> 
-abscissa_p1satdiag_relpermupwind_2d_reg_10_saturation2 = 10
-    </variable>       
-    
-    <variable name="error_p1satdiag_relpermupwind_2d_reg_10_saturation2" language="python"> 
-from fluidity_tools import stat_parser
-stat = stat_parser('simulations/p1satdiag_relpermupwind_2d_10.stat')
 try:
-    return stat['Phase2']['SaturationAbsError']['integral'][-1]
-except KeyError:
-    print '''
-Expected to find Phase2::SaturationAbsError in the stat file; 
-has this been defined in the options file?'''
+    assert(rate_p1satdiag_relpermupwind_1d_saturation2_10_80 &gt; 0.7)
+except AssertionError:
+    print rate_p1satdiag_relpermupwind_1d_saturation2_10_80
     raise
-    </variable>       
+    </test> 
     
-    <variable name="abscissa_p1satdiag_relpermupwind_2d_reg_40_saturation2" language="python"> 
-abscissa_p1satdiag_relpermupwind_2d_reg_40_saturation2 = 40
-    </variable>       
-    
-    <variable name="error_p1satdiag_relpermupwind_2d_reg_40_saturation2" language="python"> 
-from fluidity_tools import stat_parser
-stat = stat_parser('simulations/p1satdiag_relpermupwind_2d_40.stat')
+    <test name="error_p1satdiag_relpermupwind_2d_reg_10_saturation2 &lt; 0.1" language="python"> 
 try:
-    return stat['Phase2']['SaturationAbsError']['integral'][-1]
-except KeyError:
-    print '''
-Expected to find Phase2::SaturationAbsError in the stat file; 
-has this been defined in the options file?'''
+    assert(error_p1satdiag_relpermupwind_2d_reg_10_saturation2 &lt; 0.1)
+except AssertionError:
+    print error_p1satdiag_relpermupwind_2d_reg_10_saturation2
     raise
-    </variable>       
+    </test> 
     
-    <variable name="rate_p1satdiag_relpermupwind_2d_reg_saturation2_10_40" language="python"> 
+    <test name="rate_p1satdiag_relpermupwind_2d_reg_saturation2_10_40 &gt; 0.7" language="python"> 
 import numpy
 current_abscissa = float(abscissa_p1satdiag_relpermupwind_2d_reg_40_saturation2)
 current_error = numpy.abs(error_p1satdiag_relpermupwind_2d_reg_40_saturation2)
 previous_abscissa = float(abscissa_p1satdiag_relpermupwind_2d_reg_10_saturation2)
 previous_error = numpy.abs(error_p1satdiag_relpermupwind_2d_reg_10_saturation2)
 rate_p1satdiag_relpermupwind_2d_reg_saturation2_10_40 = \
-    numpy.log(current_error/previous_error) / \
+    -numpy.log(current_error/previous_error) / \
     numpy.log(current_abscissa/previous_abscissa)
-    </variable>       
-    
-    <variable name="abscissa_p1satdiag_relpermupwind_3d_reg_10_saturation2" language="python"> 
-abscissa_p1satdiag_relpermupwind_3d_reg_10_saturation2 = 10
-    </variable>       
-    
-    <variable name="error_p1satdiag_relpermupwind_3d_reg_10_saturation2" language="python"> 
-from fluidity_tools import stat_parser
-stat = stat_parser('simulations/p1satdiag_relpermupwind_3d_10.stat')
 try:
-    return stat['Phase2']['SaturationAbsError']['integral'][-1]
-except KeyError:
-    print '''
-Expected to find Phase2::SaturationAbsError in the stat file; 
-has this been defined in the options file?'''
+    assert(rate_p1satdiag_relpermupwind_2d_reg_saturation2_10_40 &gt; 0.7)
+except AssertionError:
+    print rate_p1satdiag_relpermupwind_2d_reg_saturation2_10_40
     raise
-    </variable>       
+    </test> 
     
-    <variable name="abscissa_p1satdiag_relpermupwind_3d_reg_20_saturation2" language="python"> 
-abscissa_p1satdiag_relpermupwind_3d_reg_20_saturation2 = 20
-    </variable>       
-    
-    <variable name="error_p1satdiag_relpermupwind_3d_reg_20_saturation2" language="python"> 
-from fluidity_tools import stat_parser
-stat = stat_parser('simulations/p1satdiag_relpermupwind_3d_20.stat')
+    <test name="error_p1satdiag_relpermupwind_3d_reg_10_saturation2 &lt; 0.1" language="python"> 
 try:
-    return stat['Phase2']['SaturationAbsError']['integral'][-1]
-except KeyError:
-    print '''
-Expected to find Phase2::SaturationAbsError in the stat file; 
-has this been defined in the options file?'''
+    assert(error_p1satdiag_relpermupwind_3d_reg_10_saturation2 &lt; 0.1)
+except AssertionError:
+    print error_p1satdiag_relpermupwind_3d_reg_10_saturation2
     raise
-    </variable>       
+    </test> 
     
-    <variable name="rate_p1satdiag_relpermupwind_3d_reg_saturation2_10_20" language="python"> 
+    <test name="rate_p1satdiag_relpermupwind_3d_reg_saturation2_10_20 &gt; 0.7" language="python"> 
 import numpy
 current_abscissa = float(abscissa_p1satdiag_relpermupwind_3d_reg_20_saturation2)
 current_error = numpy.abs(error_p1satdiag_relpermupwind_3d_reg_20_saturation2)
 previous_abscissa = float(abscissa_p1satdiag_relpermupwind_3d_reg_10_saturation2)
 previous_error = numpy.abs(error_p1satdiag_relpermupwind_3d_reg_10_saturation2)
 rate_p1satdiag_relpermupwind_3d_reg_saturation2_10_20 = \
-    numpy.log(current_error/previous_error) / \
+    -numpy.log(current_error/previous_error) / \
     numpy.log(current_abscissa/previous_abscissa)
-    </variable>       
-    
-    <variable name="abscissa_p1satdiag_modrelpermupwind_1d_10_saturation2" language="python"> 
-abscissa_p1satdiag_modrelpermupwind_1d_10_saturation2 = 10
-    </variable>       
-    
-    <variable name="error_p1satdiag_modrelpermupwind_1d_10_saturation2" language="python"> 
-from fluidity_tools import stat_parser
-stat = stat_parser('simulations/p1satdiag_modrelpermupwind_1d_10.stat')
 try:
-    return stat['Phase2']['SaturationAbsError']['integral'][-1]
-except KeyError:
-    print '''
-Expected to find Phase2::SaturationAbsError in the stat file; 
-has this been defined in the options file?'''
+    assert(rate_p1satdiag_relpermupwind_3d_reg_saturation2_10_20 &gt; 0.7)
+except AssertionError:
+    print rate_p1satdiag_relpermupwind_3d_reg_saturation2_10_20
     raise
-    </variable>       
+    </test> 
     
-    <variable name="abscissa_p1satdiag_modrelpermupwind_1d_80_saturation2" language="python"> 
-abscissa_p1satdiag_modrelpermupwind_1d_80_saturation2 = 80
-    </variable>       
-    
-    <variable name="error_p1satdiag_modrelpermupwind_1d_80_saturation2" language="python"> 
-from fluidity_tools import stat_parser
-stat = stat_parser('simulations/p1satdiag_modrelpermupwind_1d_80.stat')
+    <test name="error_p1satdiag_modrelpermupwind_1d_10_saturation2 &lt; 0.1" language="python"> 
 try:
-    return stat['Phase2']['SaturationAbsError']['integral'][-1]
-except KeyError:
-    print '''
-Expected to find Phase2::SaturationAbsError in the stat file; 
-has this been defined in the options file?'''
+    assert(error_p1satdiag_modrelpermupwind_1d_10_saturation2 &lt; 0.1)
+except AssertionError:
+    print error_p1satdiag_modrelpermupwind_1d_10_saturation2
     raise
-    </variable>       
+    </test> 
     
-    <variable name="rate_p1satdiag_modrelpermupwind_1d_saturation2_10_80" language="python"> 
+    <test name="rate_p1satdiag_modrelpermupwind_1d_saturation2_10_80 &gt; 0.7" language="python"> 
 import numpy
 current_abscissa = float(abscissa_p1satdiag_modrelpermupwind_1d_80_saturation2)
 current_error = numpy.abs(error_p1satdiag_modrelpermupwind_1d_80_saturation2)
 previous_abscissa = float(abscissa_p1satdiag_modrelpermupwind_1d_10_saturation2)
 previous_error = numpy.abs(error_p1satdiag_modrelpermupwind_1d_10_saturation2)
 rate_p1satdiag_modrelpermupwind_1d_saturation2_10_80 = \
-    numpy.log(current_error/previous_error) / \
+    -numpy.log(current_error/previous_error) / \
     numpy.log(current_abscissa/previous_abscissa)
-    </variable>       
-    
-    <variable name="abscissa_p1satdiag_modrelpermupwind_2d_reg_10_saturation2" language="python"> 
-abscissa_p1satdiag_modrelpermupwind_2d_reg_10_saturation2 = 10
-    </variable>       
-    
-    <variable name="error_p1satdiag_modrelpermupwind_2d_reg_10_saturation2" language="python"> 
-from fluidity_tools import stat_parser
-stat = stat_parser('simulations/p1satdiag_modrelpermupwind_2d_10.stat')
 try:
-    return stat['Phase2']['SaturationAbsError']['integral'][-1]
-except KeyError:
-    print '''
-Expected to find Phase2::SaturationAbsError in the stat file; 
-has this been defined in the options file?'''
+    assert(rate_p1satdiag_modrelpermupwind_1d_saturation2_10_80 &gt; 0.7)
+except AssertionError:
+    print rate_p1satdiag_modrelpermupwind_1d_saturation2_10_80
     raise
-    </variable>       
+    </test> 
     
-    <variable name="abscissa_p1satdiag_modrelpermupwind_2d_reg_40_saturation2" language="python"> 
-abscissa_p1satdiag_modrelpermupwind_2d_reg_40_saturation2 = 40
-    </variable>       
-    
-    <variable name="error_p1satdiag_modrelpermupwind_2d_reg_40_saturation2" language="python"> 
-from fluidity_tools import stat_parser
-stat = stat_parser('simulations/p1satdiag_modrelpermupwind_2d_40.stat')
+    <test name="error_p1satdiag_modrelpermupwind_2d_reg_10_saturation2 &lt; 0.1" language="python"> 
 try:
-    return stat['Phase2']['SaturationAbsError']['integral'][-1]
-except KeyError:
-    print '''
-Expected to find Phase2::SaturationAbsError in the stat file; 
-has this been defined in the options file?'''
+    assert(error_p1satdiag_modrelpermupwind_2d_reg_10_saturation2 &lt; 0.1)
+except AssertionError:
+    print error_p1satdiag_modrelpermupwind_2d_reg_10_saturation2
     raise
-    </variable>       
+    </test> 
     
-    <variable name="rate_p1satdiag_modrelpermupwind_2d_reg_saturation2_10_40" language="python"> 
+    <test name="rate_p1satdiag_modrelpermupwind_2d_reg_saturation2_10_40 &gt; 0.7" language="python"> 
 import numpy
 current_abscissa = float(abscissa_p1satdiag_modrelpermupwind_2d_reg_40_saturation2)
 current_error = numpy.abs(error_p1satdiag_modrelpermupwind_2d_reg_40_saturation2)
 previous_abscissa = float(abscissa_p1satdiag_modrelpermupwind_2d_reg_10_saturation2)
 previous_error = numpy.abs(error_p1satdiag_modrelpermupwind_2d_reg_10_saturation2)
 rate_p1satdiag_modrelpermupwind_2d_reg_saturation2_10_40 = \
-    numpy.log(current_error/previous_error) / \
+    -numpy.log(current_error/previous_error) / \
     numpy.log(current_abscissa/previous_abscissa)
-    </variable>       
-    
-    <variable name="abscissa_p1satdiag_modrelpermupwind_3d_reg_10_saturation2" language="python"> 
-abscissa_p1satdiag_modrelpermupwind_3d_reg_10_saturation2 = 10
-    </variable>       
-    
-    <variable name="error_p1satdiag_modrelpermupwind_3d_reg_10_saturation2" language="python"> 
-from fluidity_tools import stat_parser
-stat = stat_parser('simulations/p1satdiag_modrelpermupwind_3d_10.stat')
 try:
-    return stat['Phase2']['SaturationAbsError']['integral'][-1]
-except KeyError:
-    print '''
-Expected to find Phase2::SaturationAbsError in the stat file; 
-has this been defined in the options file?'''
+    assert(rate_p1satdiag_modrelpermupwind_2d_reg_saturation2_10_40 &gt; 0.7)
+except AssertionError:
+    print rate_p1satdiag_modrelpermupwind_2d_reg_saturation2_10_40
     raise
-    </variable>       
+    </test> 
     
-    <variable name="abscissa_p1satdiag_modrelpermupwind_3d_reg_20_saturation2" language="python"> 
-abscissa_p1satdiag_modrelpermupwind_3d_reg_20_saturation2 = 20
-    </variable>       
-    
-    <variable name="error_p1satdiag_modrelpermupwind_3d_reg_20_saturation2" language="python"> 
-from fluidity_tools import stat_parser
-stat = stat_parser('simulations/p1satdiag_modrelpermupwind_3d_20.stat')
+    <test name="error_p1satdiag_modrelpermupwind_3d_reg_10_saturation2 &lt; 0.1" language="python"> 
 try:
-    return stat['Phase2']['SaturationAbsError']['integral'][-1]
-except KeyError:
-    print '''
-Expected to find Phase2::SaturationAbsError in the stat file; 
-has this been defined in the options file?'''
+    assert(error_p1satdiag_modrelpermupwind_3d_reg_10_saturation2 &lt; 0.1)
+except AssertionError:
+    print error_p1satdiag_modrelpermupwind_3d_reg_10_saturation2
     raise
-    </variable>       
+    </test> 
     
-    <variable name="rate_p1satdiag_modrelpermupwind_3d_reg_saturation2_10_20" language="python"> 
+    <test name="rate_p1satdiag_modrelpermupwind_3d_reg_saturation2_10_20 &gt; 0.7" language="python"> 
 import numpy
 current_abscissa = float(abscissa_p1satdiag_modrelpermupwind_3d_reg_20_saturation2)
 current_error = numpy.abs(error_p1satdiag_modrelpermupwind_3d_reg_20_saturation2)
 previous_abscissa = float(abscissa_p1satdiag_modrelpermupwind_3d_reg_10_saturation2)
 previous_error = numpy.abs(error_p1satdiag_modrelpermupwind_3d_reg_10_saturation2)
 rate_p1satdiag_modrelpermupwind_3d_reg_saturation2_10_20 = \
-    numpy.log(current_error/previous_error) / \
+    -numpy.log(current_error/previous_error) / \
     numpy.log(current_abscissa/previous_abscissa)
-    </variable>       
-    
-    <variable name="abscissa_withgrav_updip_relpermupwind_1d_10_saturation2" language="python"> 
-abscissa_withgrav_updip_relpermupwind_1d_10_saturation2 = 10
-    </variable>       
-    
-    <variable name="error_withgrav_updip_relpermupwind_1d_10_saturation2" language="python"> 
-from fluidity_tools import stat_parser
-stat = stat_parser('simulations/withgrav_updip_relpermupwind_1d_10.stat')
 try:
-    return stat['Phase2']['SaturationAbsError']['integral'][-1]
-except KeyError:
-    print '''
-Expected to find Phase2::SaturationAbsError in the stat file; 
-has this been defined in the options file?'''
+    assert(rate_p1satdiag_modrelpermupwind_3d_reg_saturation2_10_20 &gt; 0.7)
+except AssertionError:
+    print rate_p1satdiag_modrelpermupwind_3d_reg_saturation2_10_20
     raise
-    </variable>       
+    </test> 
     
-    <variable name="abscissa_withgrav_updip_relpermupwind_1d_80_saturation2" language="python"> 
-abscissa_withgrav_updip_relpermupwind_1d_80_saturation2 = 80
-    </variable>       
-    
-    <variable name="error_withgrav_updip_relpermupwind_1d_80_saturation2" language="python"> 
-from fluidity_tools import stat_parser
-stat = stat_parser('simulations/withgrav_updip_relpermupwind_1d_80.stat')
+    <test name="error_withgrav_updip_relpermupwind_1d_10_saturation2 &lt; 0.1" language="python"> 
 try:
-    return stat['Phase2']['SaturationAbsError']['integral'][-1]
-except KeyError:
-    print '''
-Expected to find Phase2::SaturationAbsError in the stat file; 
-has this been defined in the options file?'''
+    assert(error_withgrav_updip_relpermupwind_1d_10_saturation2 &lt; 0.1)
+except AssertionError:
+    print error_withgrav_updip_relpermupwind_1d_10_saturation2
     raise
-    </variable>       
+    </test> 
     
-    <variable name="rate_withgrav_updip_relpermupwind_1d_saturation2_10_80" language="python"> 
+    <test name="rate_withgrav_updip_relpermupwind_1d_saturation2_10_80 &gt; 0.7" language="python"> 
 import numpy
 current_abscissa = float(abscissa_withgrav_updip_relpermupwind_1d_80_saturation2)
 current_error = numpy.abs(error_withgrav_updip_relpermupwind_1d_80_saturation2)
 previous_abscissa = float(abscissa_withgrav_updip_relpermupwind_1d_10_saturation2)
 previous_error = numpy.abs(error_withgrav_updip_relpermupwind_1d_10_saturation2)
 rate_withgrav_updip_relpermupwind_1d_saturation2_10_80 = \
-    numpy.log(current_error/previous_error) / \
+    -numpy.log(current_error/previous_error) / \
     numpy.log(current_abscissa/previous_abscissa)
-    </variable>       
-    
-    <variable name="abscissa_withgrav_updip_relpermupwind_2d_reg_10_saturation2" language="python"> 
-abscissa_withgrav_updip_relpermupwind_2d_reg_10_saturation2 = 10
-    </variable>       
-    
-    <variable name="error_withgrav_updip_relpermupwind_2d_reg_10_saturation2" language="python"> 
-from fluidity_tools import stat_parser
-stat = stat_parser('simulations/withgrav_updip_relpermupwind_2d_10.stat')
 try:
-    return stat['Phase2']['SaturationAbsError']['integral'][-1]
-except KeyError:
-    print '''
-Expected to find Phase2::SaturationAbsError in the stat file; 
-has this been defined in the options file?'''
+    assert(rate_withgrav_updip_relpermupwind_1d_saturation2_10_80 &gt; 0.7)
+except AssertionError:
+    print rate_withgrav_updip_relpermupwind_1d_saturation2_10_80
     raise
-    </variable>       
+    </test> 
     
-    <variable name="abscissa_withgrav_updip_relpermupwind_2d_reg_40_saturation2" language="python"> 
-abscissa_withgrav_updip_relpermupwind_2d_reg_40_saturation2 = 40
-    </variable>       
-    
-    <variable name="error_withgrav_updip_relpermupwind_2d_reg_40_saturation2" language="python"> 
-from fluidity_tools import stat_parser
-stat = stat_parser('simulations/withgrav_updip_relpermupwind_2d_40.stat')
+    <test name="error_withgrav_updip_relpermupwind_2d_reg_10_saturation2 &lt; 0.1" language="python"> 
 try:
-    return stat['Phase2']['SaturationAbsError']['integral'][-1]
-except KeyError:
-    print '''
-Expected to find Phase2::SaturationAbsError in the stat file; 
-has this been defined in the options file?'''
+    assert(error_withgrav_updip_relpermupwind_2d_reg_10_saturation2 &lt; 0.1)
+except AssertionError:
+    print error_withgrav_updip_relpermupwind_2d_reg_10_saturation2
     raise
-    </variable>       
+    </test> 
     
-    <variable name="rate_withgrav_updip_relpermupwind_2d_reg_saturation2_10_40" language="python"> 
+    <test name="rate_withgrav_updip_relpermupwind_2d_reg_saturation2_10_40 &gt; 0.7" language="python"> 
 import numpy
 current_abscissa = float(abscissa_withgrav_updip_relpermupwind_2d_reg_40_saturation2)
 current_error = numpy.abs(error_withgrav_updip_relpermupwind_2d_reg_40_saturation2)
 previous_abscissa = float(abscissa_withgrav_updip_relpermupwind_2d_reg_10_saturation2)
 previous_error = numpy.abs(error_withgrav_updip_relpermupwind_2d_reg_10_saturation2)
 rate_withgrav_updip_relpermupwind_2d_reg_saturation2_10_40 = \
-    numpy.log(current_error/previous_error) / \
+    -numpy.log(current_error/previous_error) / \
     numpy.log(current_abscissa/previous_abscissa)
-    </variable>       
-    
-    <variable name="abscissa_withgrav_updip_relpermupwind_3d_reg_10_saturation2" language="python"> 
-abscissa_withgrav_updip_relpermupwind_3d_reg_10_saturation2 = 10
-    </variable>       
-    
-    <variable name="error_withgrav_updip_relpermupwind_3d_reg_10_saturation2" language="python"> 
-from fluidity_tools import stat_parser
-stat = stat_parser('simulations/withgrav_updip_relpermupwind_3d_10.stat')
 try:
-    return stat['Phase2']['SaturationAbsError']['integral'][-1]
-except KeyError:
-    print '''
-Expected to find Phase2::SaturationAbsError in the stat file; 
-has this been defined in the options file?'''
+    assert(rate_withgrav_updip_relpermupwind_2d_reg_saturation2_10_40 &gt; 0.7)
+except AssertionError:
+    print rate_withgrav_updip_relpermupwind_2d_reg_saturation2_10_40
     raise
-    </variable>       
+    </test> 
     
-    <variable name="abscissa_withgrav_updip_relpermupwind_3d_reg_20_saturation2" language="python"> 
-abscissa_withgrav_updip_relpermupwind_3d_reg_20_saturation2 = 20
-    </variable>       
-    
-    <variable name="error_withgrav_updip_relpermupwind_3d_reg_20_saturation2" language="python"> 
-from fluidity_tools import stat_parser
-stat = stat_parser('simulations/withgrav_updip_relpermupwind_3d_20.stat')
+    <test name="error_withgrav_updip_relpermupwind_3d_reg_10_saturation2 &lt; 0.1" language="python"> 
 try:
-    return stat['Phase2']['SaturationAbsError']['integral'][-1]
-except KeyError:
-    print '''
-Expected to find Phase2::SaturationAbsError in the stat file; 
-has this been defined in the options file?'''
+    assert(error_withgrav_updip_relpermupwind_3d_reg_10_saturation2 &lt; 0.1)
+except AssertionError:
+    print error_withgrav_updip_relpermupwind_3d_reg_10_saturation2
     raise
-    </variable>       
+    </test> 
     
-    <variable name="rate_withgrav_updip_relpermupwind_3d_reg_saturation2_10_20" language="python"> 
+    <test name="rate_withgrav_updip_relpermupwind_3d_reg_saturation2_10_20 &gt; 0.7" language="python"> 
 import numpy
 current_abscissa = float(abscissa_withgrav_updip_relpermupwind_3d_reg_20_saturation2)
 current_error = numpy.abs(error_withgrav_updip_relpermupwind_3d_reg_20_saturation2)
 previous_abscissa = float(abscissa_withgrav_updip_relpermupwind_3d_reg_10_saturation2)
 previous_error = numpy.abs(error_withgrav_updip_relpermupwind_3d_reg_10_saturation2)
 rate_withgrav_updip_relpermupwind_3d_reg_saturation2_10_20 = \
-    numpy.log(current_error/previous_error) / \
+    -numpy.log(current_error/previous_error) / \
     numpy.log(current_abscissa/previous_abscissa)
-    </variable>       
-    
-    <variable name="abscissa_withgrav_updip_modrelpermupwind_1d_10_saturation2" language="python"> 
-abscissa_withgrav_updip_modrelpermupwind_1d_10_saturation2 = 10
-    </variable>       
-    
-    <variable name="error_withgrav_updip_modrelpermupwind_1d_10_saturation2" language="python"> 
-from fluidity_tools import stat_parser
-stat = stat_parser('simulations/withgrav_updip_modrelpermupwind_1d_10.stat')
 try:
-    return stat['Phase2']['SaturationAbsError']['integral'][-1]
-except KeyError:
-    print '''
-Expected to find Phase2::SaturationAbsError in the stat file; 
-has this been defined in the options file?'''
+    assert(rate_withgrav_updip_relpermupwind_3d_reg_saturation2_10_20 &gt; 0.7)
+except AssertionError:
+    print rate_withgrav_updip_relpermupwind_3d_reg_saturation2_10_20
     raise
-    </variable>       
+    </test> 
     
-    <variable name="abscissa_withgrav_updip_modrelpermupwind_1d_80_saturation2" language="python"> 
-abscissa_withgrav_updip_modrelpermupwind_1d_80_saturation2 = 80
-    </variable>       
-    
-    <variable name="error_withgrav_updip_modrelpermupwind_1d_80_saturation2" language="python"> 
-from fluidity_tools import stat_parser
-stat = stat_parser('simulations/withgrav_updip_modrelpermupwind_1d_80.stat')
+    <test name="error_withgrav_updip_modrelpermupwind_1d_10_saturation2 &lt; 0.1" language="python"> 
 try:
-    return stat['Phase2']['SaturationAbsError']['integral'][-1]
-except KeyError:
-    print '''
-Expected to find Phase2::SaturationAbsError in the stat file; 
-has this been defined in the options file?'''
+    assert(error_withgrav_updip_modrelpermupwind_1d_10_saturation2 &lt; 0.1)
+except AssertionError:
+    print error_withgrav_updip_modrelpermupwind_1d_10_saturation2
     raise
-    </variable>       
+    </test> 
     
-    <variable name="rate_withgrav_updip_modrelpermupwind_1d_saturation2_10_80" language="python"> 
+    <test name="rate_withgrav_updip_modrelpermupwind_1d_saturation2_10_80 &gt; 0.7" language="python"> 
 import numpy
 current_abscissa = float(abscissa_withgrav_updip_modrelpermupwind_1d_80_saturation2)
 current_error = numpy.abs(error_withgrav_updip_modrelpermupwind_1d_80_saturation2)
 previous_abscissa = float(abscissa_withgrav_updip_modrelpermupwind_1d_10_saturation2)
 previous_error = numpy.abs(error_withgrav_updip_modrelpermupwind_1d_10_saturation2)
 rate_withgrav_updip_modrelpermupwind_1d_saturation2_10_80 = \
-    numpy.log(current_error/previous_error) / \
+    -numpy.log(current_error/previous_error) / \
     numpy.log(current_abscissa/previous_abscissa)
-    </variable>       
-    
-    <variable name="abscissa_withgrav_updip_modrelpermupwind_2d_reg_10_saturation2" language="python"> 
-abscissa_withgrav_updip_modrelpermupwind_2d_reg_10_saturation2 = 10
-    </variable>       
-    
-    <variable name="error_withgrav_updip_modrelpermupwind_2d_reg_10_saturation2" language="python"> 
-from fluidity_tools import stat_parser
-stat = stat_parser('simulations/withgrav_updip_modrelpermupwind_2d_10.stat')
 try:
-    return stat['Phase2']['SaturationAbsError']['integral'][-1]
-except KeyError:
-    print '''
-Expected to find Phase2::SaturationAbsError in the stat file; 
-has this been defined in the options file?'''
+    assert(rate_withgrav_updip_modrelpermupwind_1d_saturation2_10_80 &gt; 0.7)
+except AssertionError:
+    print rate_withgrav_updip_modrelpermupwind_1d_saturation2_10_80
     raise
-    </variable>       
+    </test> 
     
-    <variable name="abscissa_withgrav_updip_modrelpermupwind_2d_reg_40_saturation2" language="python"> 
-abscissa_withgrav_updip_modrelpermupwind_2d_reg_40_saturation2 = 40
-    </variable>       
-    
-    <variable name="error_withgrav_updip_modrelpermupwind_2d_reg_40_saturation2" language="python"> 
-from fluidity_tools import stat_parser
-stat = stat_parser('simulations/withgrav_updip_modrelpermupwind_2d_40.stat')
+    <test name="error_withgrav_updip_modrelpermupwind_2d_reg_10_saturation2 &lt; 0.1" language="python"> 
 try:
-    return stat['Phase2']['SaturationAbsError']['integral'][-1]
-except KeyError:
-    print '''
-Expected to find Phase2::SaturationAbsError in the stat file; 
-has this been defined in the options file?'''
+    assert(error_withgrav_updip_modrelpermupwind_2d_reg_10_saturation2 &lt; 0.1)
+except AssertionError:
+    print error_withgrav_updip_modrelpermupwind_2d_reg_10_saturation2
     raise
-    </variable>       
+    </test> 
     
-    <variable name="rate_withgrav_updip_modrelpermupwind_2d_reg_saturation2_10_40" language="python"> 
+    <test name="rate_withgrav_updip_modrelpermupwind_2d_reg_saturation2_10_40 &gt; 0.7" language="python"> 
 import numpy
 current_abscissa = float(abscissa_withgrav_updip_modrelpermupwind_2d_reg_40_saturation2)
 current_error = numpy.abs(error_withgrav_updip_modrelpermupwind_2d_reg_40_saturation2)
 previous_abscissa = float(abscissa_withgrav_updip_modrelpermupwind_2d_reg_10_saturation2)
 previous_error = numpy.abs(error_withgrav_updip_modrelpermupwind_2d_reg_10_saturation2)
 rate_withgrav_updip_modrelpermupwind_2d_reg_saturation2_10_40 = \
-    numpy.log(current_error/previous_error) / \
+    -numpy.log(current_error/previous_error) / \
     numpy.log(current_abscissa/previous_abscissa)
-    </variable>       
-    
-    <variable name="abscissa_withgrav_updip_modrelpermupwind_3d_reg_10_saturation2" language="python"> 
-abscissa_withgrav_updip_modrelpermupwind_3d_reg_10_saturation2 = 10
-    </variable>       
-    
-    <variable name="error_withgrav_updip_modrelpermupwind_3d_reg_10_saturation2" language="python"> 
-from fluidity_tools import stat_parser
-stat = stat_parser('simulations/withgrav_updip_modrelpermupwind_3d_10.stat')
 try:
-    return stat['Phase2']['SaturationAbsError']['integral'][-1]
-except KeyError:
-    print '''
-Expected to find Phase2::SaturationAbsError in the stat file; 
-has this been defined in the options file?'''
+    assert(rate_withgrav_updip_modrelpermupwind_2d_reg_saturation2_10_40 &gt; 0.7)
+except AssertionError:
+    print rate_withgrav_updip_modrelpermupwind_2d_reg_saturation2_10_40
     raise
-    </variable>       
+    </test> 
     
-    <variable name="abscissa_withgrav_updip_modrelpermupwind_3d_reg_20_saturation2" language="python"> 
-abscissa_withgrav_updip_modrelpermupwind_3d_reg_20_saturation2 = 20
-    </variable>       
-    
-    <variable name="error_withgrav_updip_modrelpermupwind_3d_reg_20_saturation2" language="python"> 
-from fluidity_tools import stat_parser
-stat = stat_parser('simulations/withgrav_updip_modrelpermupwind_3d_20.stat')
+    <test name="error_withgrav_updip_modrelpermupwind_3d_reg_10_saturation2 &lt; 0.1" language="python"> 
 try:
-    return stat['Phase2']['SaturationAbsError']['integral'][-1]
-except KeyError:
-    print '''
-Expected to find Phase2::SaturationAbsError in the stat file; 
-has this been defined in the options file?'''
+    assert(error_withgrav_updip_modrelpermupwind_3d_reg_10_saturation2 &lt; 0.1)
+except AssertionError:
+    print error_withgrav_updip_modrelpermupwind_3d_reg_10_saturation2
     raise
-    </variable>       
+    </test> 
     
-    <variable name="rate_withgrav_updip_modrelpermupwind_3d_reg_saturation2_10_20" language="python"> 
+    <test name="rate_withgrav_updip_modrelpermupwind_3d_reg_saturation2_10_20 &gt; 0.7" language="python"> 
 import numpy
 current_abscissa = float(abscissa_withgrav_updip_modrelpermupwind_3d_reg_20_saturation2)
 current_error = numpy.abs(error_withgrav_updip_modrelpermupwind_3d_reg_20_saturation2)
 previous_abscissa = float(abscissa_withgrav_updip_modrelpermupwind_3d_reg_10_saturation2)
 previous_error = numpy.abs(error_withgrav_updip_modrelpermupwind_3d_reg_10_saturation2)
 rate_withgrav_updip_modrelpermupwind_3d_reg_saturation2_10_20 = \
-    numpy.log(current_error/previous_error) / \
+    -numpy.log(current_error/previous_error) / \
     numpy.log(current_abscissa/previous_abscissa)
-    </variable>       
-    
-  </variables>
-  <pass_tests>
-    <test name="Solvers converged" language="python">
-import os
-files = os.listdir("./")
-assert(not "matrixdump" in files and not "matrixdump.info" in files)
-    </test>
-    
-    <test name="error_p1satdiag_relpermupwind_1d_10_saturation2 &lt; 0.1" language="python"> 
-assert(error_p1satdiag_relpermupwind_1d_10_saturation2 &lt; 0.1)
-    </test> 
-    
-    <test name="rate_p1satdiag_relpermupwind_1d_saturation2_10_80 &gt; 0.7" language="python"> 
-assert(rate_p1satdiag_relpermupwind_1d_saturation2_10_80 &gt; 0.7)
-    </test> 
-    
-    <test name="error_p1satdiag_relpermupwind_2d_reg_10_saturation2 &lt; 0.1" language="python"> 
-assert(error_p1satdiag_relpermupwind_2d_reg_10_saturation2 &lt; 0.1)
-    </test> 
-    
-    <test name="rate_p1satdiag_relpermupwind_2d_reg_saturation2_10_40 &gt; 0.7" language="python"> 
-assert(rate_p1satdiag_relpermupwind_2d_reg_saturation2_10_40 &gt; 0.7)
-    </test> 
-    
-    <test name="error_p1satdiag_relpermupwind_3d_reg_10_saturation2 &lt; 0.1" language="python"> 
-assert(error_p1satdiag_relpermupwind_3d_reg_10_saturation2 &lt; 0.1)
-    </test> 
-    
-    <test name="rate_p1satdiag_relpermupwind_3d_reg_saturation2_10_20 &gt; 0.7" language="python"> 
-assert(rate_p1satdiag_relpermupwind_3d_reg_saturation2_10_20 &gt; 0.7)
-    </test> 
-    
-    <test name="error_p1satdiag_modrelpermupwind_1d_10_saturation2 &lt; 0.1" language="python"> 
-assert(error_p1satdiag_modrelpermupwind_1d_10_saturation2 &lt; 0.1)
-    </test> 
-    
-    <test name="rate_p1satdiag_modrelpermupwind_1d_saturation2_10_80 &gt; 0.7" language="python"> 
-assert(rate_p1satdiag_modrelpermupwind_1d_saturation2_10_80 &gt; 0.7)
-    </test> 
-    
-    <test name="error_p1satdiag_modrelpermupwind_2d_reg_10_saturation2 &lt; 0.1" language="python"> 
-assert(error_p1satdiag_modrelpermupwind_2d_reg_10_saturation2 &lt; 0.1)
-    </test> 
-    
-    <test name="rate_p1satdiag_modrelpermupwind_2d_reg_saturation2_10_40 &gt; 0.7" language="python"> 
-assert(rate_p1satdiag_modrelpermupwind_2d_reg_saturation2_10_40 &gt; 0.7)
-    </test> 
-    
-    <test name="error_p1satdiag_modrelpermupwind_3d_reg_10_saturation2 &lt; 0.1" language="python"> 
-assert(error_p1satdiag_modrelpermupwind_3d_reg_10_saturation2 &lt; 0.1)
-    </test> 
-    
-    <test name="rate_p1satdiag_modrelpermupwind_3d_reg_saturation2_10_20 &gt; 0.7" language="python"> 
-assert(rate_p1satdiag_modrelpermupwind_3d_reg_saturation2_10_20 &gt; 0.7)
-    </test> 
-    
-    <test name="error_withgrav_updip_relpermupwind_1d_10_saturation2 &lt; 0.1" language="python"> 
-assert(error_withgrav_updip_relpermupwind_1d_10_saturation2 &lt; 0.1)
-    </test> 
-    
-    <test name="rate_withgrav_updip_relpermupwind_1d_saturation2_10_80 &gt; 0.7" language="python"> 
-assert(rate_withgrav_updip_relpermupwind_1d_saturation2_10_80 &gt; 0.7)
-    </test> 
-    
-    <test name="error_withgrav_updip_relpermupwind_2d_reg_10_saturation2 &lt; 0.1" language="python"> 
-assert(error_withgrav_updip_relpermupwind_2d_reg_10_saturation2 &lt; 0.1)
-    </test> 
-    
-    <test name="rate_withgrav_updip_relpermupwind_2d_reg_saturation2_10_40 &gt; 0.7" language="python"> 
-assert(rate_withgrav_updip_relpermupwind_2d_reg_saturation2_10_40 &gt; 0.7)
-    </test> 
-    
-    <test name="error_withgrav_updip_relpermupwind_3d_reg_10_saturation2 &lt; 0.1" language="python"> 
-assert(error_withgrav_updip_relpermupwind_3d_reg_10_saturation2 &lt; 0.1)
-    </test> 
-    
-    <test name="rate_withgrav_updip_relpermupwind_3d_reg_saturation2_10_20 &gt; 0.7" language="python"> 
-assert(rate_withgrav_updip_relpermupwind_3d_reg_saturation2_10_20 &gt; 0.7)
-    </test> 
-    
-    <test name="error_withgrav_updip_modrelpermupwind_1d_10_saturation2 &lt; 0.1" language="python"> 
-assert(error_withgrav_updip_modrelpermupwind_1d_10_saturation2 &lt; 0.1)
-    </test> 
-    
-    <test name="rate_withgrav_updip_modrelpermupwind_1d_saturation2_10_80 &gt; 0.7" language="python"> 
-assert(rate_withgrav_updip_modrelpermupwind_1d_saturation2_10_80 &gt; 0.7)
-    </test> 
-    
-    <test name="error_withgrav_updip_modrelpermupwind_2d_reg_10_saturation2 &lt; 0.1" language="python"> 
-assert(error_withgrav_updip_modrelpermupwind_2d_reg_10_saturation2 &lt; 0.1)
-    </test> 
-    
-    <test name="rate_withgrav_updip_modrelpermupwind_2d_reg_saturation2_10_40 &gt; 0.7" language="python"> 
-assert(rate_withgrav_updip_modrelpermupwind_2d_reg_saturation2_10_40 &gt; 0.7)
-    </test> 
-    
-    <test name="error_withgrav_updip_modrelpermupwind_3d_reg_10_saturation2 &lt; 0.1" language="python"> 
-assert(error_withgrav_updip_modrelpermupwind_3d_reg_10_saturation2 &lt; 0.1)
-    </test> 
-    
-    <test name="rate_withgrav_updip_modrelpermupwind_3d_reg_saturation2_10_20 &gt; 0.7" language="python"> 
-assert(rate_withgrav_updip_modrelpermupwind_3d_reg_saturation2_10_20 &gt; 0.7)
+try:
+    assert(rate_withgrav_updip_modrelpermupwind_3d_reg_saturation2_10_20 &gt; 0.7)
+except AssertionError:
+    print rate_withgrav_updip_modrelpermupwind_3d_reg_saturation2_10_20
+    raise
     </test> 
     
   </pass_tests>

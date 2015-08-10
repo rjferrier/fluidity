@@ -115,17 +115,17 @@ def get_error_from_field(options, results_dir='.'):
             format(phase, var))
 
 
-def render_error_from_field(options, results_dir='.'):
+def render_error_from_field(options, var_name, results_dir='.'):
     return """
 from fluidity_tools import stat_parser
 stat = stat_parser('{0}/{1}.stat')
 try:
-    return stat['{2}']['{3}']['{4}'][{5}]
+    {2} = stat['{3}']['{4}']['{5}'][{6}]
 except KeyError:
     print '''
-Expected to find {2}::{3} in the stat file; 
+Expected to find {3}::{4} in the stat file; 
 has this been defined in the options file?'''
-    raise""".format(results_dir, options['simulation_name'],
+    raise""".format(results_dir, options['simulation_name'], var_name,
            options['phase_name'], options['error_variable_name'],
            options['error_calculation'], options['timestep_index'])
 
@@ -262,6 +262,8 @@ class WriteXml(SerialFunctor):
 
         if options['simulation_name'] not in self.register:
             self.simulation_commands.append(
+                'echo "Running {}"'.format(options['simulation_name']))
+            self.simulation_commands.append(
                 ' '.join(options['simulation_args']))
             self.register.append(options['simulation_name'])
         msg += '\n' + options['simulation_name']
@@ -276,6 +278,7 @@ class WriteXml(SerialFunctor):
             'name': name,
             'code': '\n{} = {}'.format(
                 name, options[self.convergence_abscissa_key]),
+            'test_code': '',
             'metric_type': 'abscissa',
             'rel_op': None,
             'threshold': None })
@@ -283,10 +286,12 @@ class WriteXml(SerialFunctor):
 
         
     def append_error_variable(self, options):
+        name = 'error_' + options.str(
+            only=self.naming_keys, exclude=self.excluded_naming_keys)
         self.variables.append({
-            'name': 'error_' + options.str(
-                only=self.naming_keys, exclude=self.excluded_naming_keys),
-            'code': self.error_renderer(options, self.simulation_dir),
+            'name': name,
+            'code': self.error_renderer(options, name, self.simulation_dir),
+            'test_code': '',
             'metric_type': 'error',
             'rel_op': 'lt',
             'threshold': options.max_error_norm })
@@ -316,7 +321,8 @@ class WriteXml(SerialFunctor):
             return ''
         self.variables.append({
             'name': name,
-            'code': self.render_rate(options, name),
+            'code': '',
+            'test_code': self.render_rate(options, name),
             'metric_type': 'rate',
             'rel_op': 'gt',
             'threshold': options.min_convergence_rate })

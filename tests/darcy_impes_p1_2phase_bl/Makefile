@@ -12,6 +12,7 @@ clean:
 	rm -f simulations/*.vtu
 	rm -f simulations/*.stat
 	rm -f simulations/*.err
+	rm -f simulations/matrixdump*
 	rm -f meshes/*.msh
 	rm -f $(TEMPLATES)
 	rm -f *.pyc
