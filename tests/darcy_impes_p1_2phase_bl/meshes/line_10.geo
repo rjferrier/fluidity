@@ -1,5 +1,5 @@
-lx = $domain_length_x;
-nx = $el_num_x;
+lx = 1.0;
+nx = 10;
 
 // for some reason mesh adaptivity complains 
 // if extrusion isn't done in reverse

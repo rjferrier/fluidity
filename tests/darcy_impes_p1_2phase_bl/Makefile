@@ -1,27 +1,34 @@
 include ../darcy_impes_common/Depend.mk
 
-.PHONY: input pre run post xml clean
+export TEMPLATES = xml.template \
+	orthotope_1d.geo.template \
+	orthotope_2d.geo.template \
+	orthotope_3d.geo.template
 
-input: pre run post
-
-pre: 
-	cp $(FLUIDITYPATH)/tests/darcy_impes_common/mesh_data/*.geo.template .
-	python script.py pre 
-
-run: 
-	python script.py run
-
-post: 
-	python script.py post
-
-xml: 
-	cp $(FLUIDITYPATH)/tests/darcy_impes_common/xml.template .
-	python script.py xml
+input: clean
 
 clean:
-	rm -f *report.txt
-	rm -rf results
-	rm -rf meshes
-	rm -f *geo.template
-	rm -f xml.template
+	rm -f *.txt
+	rm -f simulations/*.vtu
+	rm -f simulations/*.stat
+	rm -f simulations/*.err
+	rm -f meshes/*.msh
+	rm -f $(TEMPLATES)
 	rm -f *.pyc
+	rm -f *~
+
+%.geo.template:
+	cp $(FLUIDITYPATH)/tests/darcy_impes_common/mesh_data/$@ .
+
+%.template:
+	cp $(FLUIDITYPATH)/tests/darcy_impes_common/$@ .
+
+# regenerate everything needed by the Fluidity testing framework
+regen: pre xml clean
+
+# run the test suite in parallel
+all: pre mesh run post
+
+# delegate to the python script
+%: $(TEMPLATES)
+	@python script.py $@

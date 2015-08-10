@@ -8,6 +8,7 @@ makes sure these are represented in the options trees.
 'domain_extents'         : list of three floats   # see note [1]
 'reference_element_nums' : list of three integers
 'simulation_name'        : string
+'simulator_path'         : string
 
 Note:
 [1] mesh elements will be sized such that there are mesh_res elements
@@ -18,10 +19,7 @@ Note:
 """
 
 from options_iteration import OptionsDict, OptionsNode, OptionsArray
-import os
 import re
-
-simulator_path = os.getenv('FLUIDITYPATH') + '/bin/darcy_impes'
 
 
 ## HELPERS
@@ -29,15 +27,6 @@ simulator_path = os.getenv('FLUIDITYPATH') + '/bin/darcy_impes'
 def join(words):
     "Joins words with underscores."
     return '_'.join(([w for w in words if w] ))
-
-def capitalise_keys(options_dict, keys):
-    """
-    Duplicates entries, converting keys to uppercase.  This is useful
-    when said keys double as placeholders in templates, where the
-    placeholders follow an uppercase convention.
-    """
-    options_dict.update(
-        {k.upper(): lambda opt, k=k: opt[k] for k in keys})
     
 
 ## GEOMETRY/MESHING 
@@ -133,11 +122,10 @@ class global_simulation_options:
                               self.simulation_options_extension)
 
     def simulation_prerequisite_filenames(self):
-        return [simulator_path, self.simulation_options_filename]
+        return [self.simulator_path, self.simulation_options_filename]
 
     def simulation_args(self):
-        return [os.path.normpath(simulator_path),
-                self.simulation_options_filename]
+        return [self.simulator_path, self.simulation_options_filename]
 
 
 ## TESTING/RESULTS 

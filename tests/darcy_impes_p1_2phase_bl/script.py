@@ -17,7 +17,8 @@ simulation_naming_keys = ['subcase', 'submodel', 'dim', 'mesh_res']
 nprocs_max = 6
 
 mesh_dir = 'meshes'
-simulation_dir = 'results'
+simulation_dir = 'simulations'
+simulator_path = '../../../bin/darcy_impes'
 
 
         
@@ -125,6 +126,7 @@ class global_spatial_options(base.global_spatial_options):
 
 class global_simulation_options(base.global_simulation_options):
     case = case_name
+    simulator_path = simulator_path
     def simulation_name(self):
         return self.str(simulation_naming_keys)
     def mesh_prefix_relative_to_simulation(self):
@@ -139,7 +141,7 @@ class global_testing_options(base.global_testing_options):
     simulation_options_test_length = 'short'
     min_convergence_rate = 0.7
     error_calculation = 'integral'
-    timestep_index = 'integral'
+    timestep_index = -1
     def report_filename(self): 
         self.case + '_report.txt'
     def error_variable_name(self): 
@@ -175,7 +177,7 @@ test_options_tree.update(global_testing_options)
 if len(sys.argv) > 1:
     commands = sys.argv[1:]
 else:
-    commands = ['pre', 'run', 'post']
+    commands = ['pre', 'mesh', 'run', 'post']
 
     
 # make directories if necessary
@@ -189,7 +191,10 @@ if 'pre' in commands:
 
     
 if 'xml' in commands:
-    smap('Expanding XML file', WriteXml('mesh_res'), test_options_tree)
+    smap('Expanding XML file',
+         WriteXml('mesh_res', mesh_dir=mesh_dir, 
+                  simulation_dir=simulation_dir),
+         test_options_tree)
     
     
 if 'pre' in commands:
@@ -198,18 +203,19 @@ if 'pre' in commands:
              'geo_template_filename', 'geo_filename', target_dir=mesh_dir),
          mesh_options_tree)
     
-    pmap("Meshing",
-         RunBinary('meshing_args', 'geo_filename', 'mesh_name',
-                   working_dir=mesh_dir),
-         mesh_options_tree, nprocs_max=nprocs_max, in_reverse=True)
-
-    
     smap("Expanding options files",
          ExpandTemplate(
              'simulation_options_template_filename',
              'simulation_options_filename', target_dir=simulation_dir,
              rendering_strategy=SimpleRendering(nloops=5)),
          sim_options_tree)
+
+    
+if 'mesh' in commands:
+    pmap("Meshing",
+         RunBinary('meshing_args', 'geo_filename', 'mesh_name',
+                   working_dir=mesh_dir),
+         mesh_options_tree, nprocs_max=nprocs_max, in_reverse=True)
 
     
 if 'run' in commands:
@@ -221,8 +227,8 @@ if 'run' in commands:
     
 if 'post' in commands:
     smap('Postprocessing',
-         StudyConvergence('mesh_res', GetErrorFromField,
-                          source_dir=simulation_dir,
+         StudyConvergence('mesh_res', case_name + '.txt', 
+                          results_dir=simulation_dir,
                           with_respect_to_resolution=True),
          test_options_tree)
     

@@ -1,3 +1,24 @@
+"""
+This module contains functionality for batch-processing
+simulations, interpolating between simulated fields and quasi-analytic
+solutions, examining error norms and convergence rates, and writing an
+XML file to do all of the above.  The packages options_iteration and
+jinja2 are required.
+
+About the interpolations: for the Buckley-Leverett test case, it is
+straightforward to compare the the 1D simulations to the expected 1D
+quasi-analytical solution at the latter's point locations; a
+piecewise-linear interpolant is constructed between the simulation's
+points (get_error_with_1d_solution).  This is difficult to extend to
+2D and 3D, but not if the interpolation is done the other way round -
+the analytical solution is used to interpolate at each simulation
+point (get_error_from_field).  The jump discontinuity of the
+analytical solution will be ill-represented, but we can still expect
+first order convergence of the l1-errors.  However, l2-errors are
+deprecated.  Their reported convergence rates can be seen to be much
+less than their l1 counterparts, presumably as a result of the
+squaring of errors at the discontinuity.
+"""
 
 from options_iteration.utilities import SerialFunctor, Failure, Success, \
     check_file_exists
@@ -51,6 +72,26 @@ def sort(x, v):
     x = numpy.array([x[i] for i in isort])
     v = numpy.array([v[i] for i in isort])
     return x, v
+
+        
+def get_error_with_1d_solution(options, results_dir='.'):
+    """
+    Computes the L1 norm.  Uniform, linear elements are assumed, so
+    the integral over the domain can be approximated by the
+    trapezium rule.
+    """
+    reference_filename = options['reference_solution_filename']
+    check_file_exists(reference_filename)        
+    [xa, va] = read_reference_solution(reference_filename)
+    
+    numerical_filename = '{}/{}'.format(results_dir, options['vtu_filename'])
+    check_file_exists(numerical_filename)        
+    [xn, vn] = read_numerical_solution(numerical_filename,
+                                       options['field_descriptor'])
+    
+    vn_interp = numpy.interp(xa, xn, vn)
+    eps = numpy.abs(vn_interp - va)
+    return (eps[0]/2 + sum(eps[1:-1]) + eps[-1]/2)*options['el_size_x']
    
 
 def get_error_from_field(options, results_dir='.'):
@@ -79,7 +120,7 @@ def render_error_from_field(options, results_dir='.'):
 from fluidity_tools import stat_parser
 stat = stat_parser('{0}/{1}.stat')
 try:
-    return stat[{2}][{3}][{4}][{5}]
+    return stat['{2}']['{3}']['{4}'][{5}]
 except KeyError:
     print '''
 Expected to find {2}::{3} in the stat file; 
@@ -88,49 +129,29 @@ has this been defined in the options file?'''
            options['phase_name'], options['error_variable_name'],
            options['error_calculation'], options['timestep_index'])
 
-        
-def get_error_with_1d_solution(options, results_dir='.'):
-    """
-    Computes the L1 norm.  Uniform, linear elements are assumed, so
-    the integral over the domain can be approximated by the
-    trapezium rule.
-    """
-    reference_filename = options['reference_solution_filename']
-    check_file_exists(reference_filename)        
-    [xa, va] = read_reference_solution(reference_filename)
-    
-    numerical_filename = '{}/{}'.format(
-        results_dir, options['vtu_filename'])
-    check_file_exists(numerical_filename)        
-    [xn, vn] = read_numerical_solution(numerical_filename,
-                                       options['field_descriptor'])
-    
-    vn_interp = numpy.interp(xa, xn, vn)
-    eps = numpy.abs(vn_interp - va)
-    return (eps[0]/2 + sum(eps[1:-1]) + eps[-1]/2)*options['el_size_x']
-
 
 class StudyConvergence(SerialFunctor):
     error_format = '{:.3e}'
     rate_format = '{:.6f}'
 
-    def __init__(self, abscissa_key,
+    def __init__(self, abscissa_key, report_filename, 
                  error_getter=get_error_from_field,
                  naming_keys=[], excluded_naming_keys=[],
-                 source_dir='.', target_dir='.',
+                 results_dir='.', report_dir='.',
                  with_respect_to_resolution=False):
         self.abscissa_key = abscissa_key
-        self.error_getter = error_getter_class(source_dir)
+        self.report_filename = report_filename
+        self.error_getter = error_getter
         self.naming_keys = naming_keys
         self.excluded_naming_keys = excluded_naming_keys
-        self.source_dir = source_dir
-        self.target_dir = target_dir
+        self.results_dir = results_dir
+        self.report_dir = report_dir
         self.with_respect_to_resolution = with_respect_to_resolution
         
     def setup(self, options):
         try:
             self.report_file = open('{}/{}'.format(
-                self.target_dir, options.report_filename), 'w')
+                self.report_dir, self.report_filename), 'w')
         except IndexError:
             self.report_file = None
         self.abscissae = {}
@@ -148,7 +169,8 @@ class StudyConvergence(SerialFunctor):
         # n.b. need to convert from integer to float
         current_abs = float(options[self.abscissa_key])
         try:
-            current_err = numpy.abs(self.error_getter(options))
+            current_err = numpy.abs(
+                self.error_getter(options, self.results_dir))
         except Failure as state:
             return self.print_end(state, options)
         
@@ -176,8 +198,8 @@ class StudyConvergence(SerialFunctor):
                 # represented, the ratio of abscissae should be
                 # reversed
                 self.rates[current_id] *= -1
-            msg += '   rate: ' + \
-                   self.rate_format.format(self.rates[current_id])
+            msg += '   rate: ' + self.rate_format.\
+                   format(self.rates[current_id])
         except:
             # not enough info
             self.rates[current_id] = numpy.nan
@@ -196,7 +218,7 @@ class WriteXml(SerialFunctor):
     def __init__(self, convergence_abscissa_key, 
                  error_renderer=render_error_from_field,
                  naming_keys=[], excluded_naming_keys=[],
-                 template_dir='.', results_dir='.',
+                 template_dir='.', mesh_dir='.', simulation_dir='.',
                  with_respect_to_resolution=False):
         
         if not HAVE_JINJA2:
@@ -206,13 +228,15 @@ class WriteXml(SerialFunctor):
         self.naming_keys = naming_keys
         self.excluded_naming_keys = excluded_naming_keys
         self.template_dir = template_dir
-        self.results_dir = results_dir
+        self.mesh_dir = mesh_dir
+        self.simulation_dir = simulation_dir
         self.with_respect_to_resolution = with_respect_to_resolution
         
     def setup(self, options):
         # the following lists will accumulate items as we loop over
         # the tree
-        self.commands = []
+        self.mesh_commands = []
+        self.simulation_commands = []
         self.variables = []
 
         # the leaves of the options tree will overlap in meshing and
@@ -231,14 +255,16 @@ class WriteXml(SerialFunctor):
         msg = ''
 
         if options['mesh_name'] not in self.register:
-            self.commands.append(' '.join(options['meshing_args']))
+            self.mesh_commands.append(
+                ' '.join(options['meshing_args']))
             self.register.append(options['mesh_name'])
-        msg += '\nmesh command: ' + options['mesh_name']
+        msg += '\n' + options['mesh_name']
 
         if options['simulation_name'] not in self.register:
-            self.commands.append(' '.join(options['simulation_args']))
+            self.simulation_commands.append(
+                ' '.join(options['simulation_args']))
             self.register.append(options['simulation_name'])
-        msg += '\nsimulation command: ' + options['simulation_name']
+        msg += '\n' + options['simulation_name']
 
         return msg
 
@@ -260,7 +286,7 @@ class WriteXml(SerialFunctor):
         self.variables.append({
             'name': 'error_' + options.str(
                 only=self.naming_keys, exclude=self.excluded_naming_keys),
-            'code': self.error_renderer(options, self.results_dir),
+            'code': self.error_renderer(options, self.simulation_dir),
             'metric_type': 'error',
             'rel_op': 'lt',
             'threshold': options.max_error_norm })
@@ -336,5 +362,9 @@ previous_error = numpy.abs(error_{1})
         # information, and the lists we've been building up
         with open(options.xml_target_filename, 'w') as f:
             f.write(template.render(
-                problem=options, commands=self.commands,
+                problem=options,
+                mesh_dir = self.mesh_dir,
+                simulation_dir = self.simulation_dir,
+                mesh_commands=self.mesh_commands,
+                simulation_commands=self.simulation_commands,
                 variables=self.variables))

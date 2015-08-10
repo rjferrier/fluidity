@@ -6,10 +6,13 @@
   <tags>{{ problem.simulation_options_extension }}</tags>
   <problem_definition length="{{ problem.simulation_options_test_length }}" nprocs="1">
     <command_line>
-{{ ' && \\ \n'.join(commands) }}
+cd {{ mesh_dir }}
+{{ '\n'.join(mesh_commands) }}
+cd ../{{ simulation_dir }}
+{{ '\n'.join(simulation_commands) }}
+cd ..
     </command_line>
   </problem_definition>
-
   <variables>
     {% for var in variables %}
     <variable name="{{ var.name }}" language="python"> {{ var.code }}
