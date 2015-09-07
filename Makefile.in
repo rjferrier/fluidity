@@ -218,7 +218,7 @@ bin/darcy_impes: fluidity_library main/Darcy_IMPES.F90
 	@echo "    MKDIR bin"
 	@mkdir -p bin
 	@echo "    LD darcy_impes"
-	@$(EVAL) $(FLINKER) -o bin/darcy_impes main/Darcy_IMPES.o $(FCFLAGS) $(LIBS)
+	@$(EVAL) $(FLLINKER) -o bin/darcy_impes main/Darcy_IMPES.o $(FCFLAGS) $(LIBS)
 
 ifeq (@ENABLE_PSMILE@,yes)
 LIBPSMILE=@FLPSMILE_PATH@/lib/libpsmile_oa4.MPI1.a @FLPSMILE_PATH@/lib/libcommon_oa4.a @FLPSMILE_PATH@/lib/libmpp_io.a -lxml2
