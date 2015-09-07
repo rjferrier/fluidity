@@ -5,10 +5,10 @@
   <tags>diml immobile-mobile</tags>
   <problem_definition length="medium" nprocs="1">
     <command_line>make input;
-darcy_impes  -v2 -l darcy_impes_MIM_1D_test_python_porosity.diml;
-darcy_impes  -v2 -l darcy_impes_MIM_1D_test_prescribed_porosity.diml;
+../../bin/darcy_impes  -v2 -l darcy_impes_MIM_1D_test_python_porosity.diml;
+../../bin/darcy_impes  -v2 -l darcy_impes_MIM_1D_test_prescribed_porosity.diml;
 cd ./src ;
-./py_script;
+python ./py_script.py;
 cd ../ ;<comment>save the plot</comment></command_line>
   </problem_definition>
   <variables>
