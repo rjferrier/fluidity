@@ -61,6 +61,9 @@ def read_numerical_solution(filename, field_name):
     f = vtktools.vtu(filename)
     x = f.GetLocations()[:,0]
     v = f.GetScalarField(field_name)
+    isort = sorted(range(len(x)), key=lambda i: x[i])
+    x = numpy.array([x[i] for i in isort])
+    v = numpy.array([v[i] for i in isort])
     if not numpy.all(numpy.diff(x) > 0): 
         print ("Issue with numerical mesh: "
                "x-coordinates not monotonically increasing.")
@@ -214,7 +217,8 @@ def interp_using_analytic(x, analytic_filename):
 
        
 class BuckleyLeverettTestSuite:
-    """Class to help run and postprocess tests.  numerical_filename_stem is
+    """
+    Class to help run and postprocess tests.  numerical_filename_stem is
     a string to be appended with the elements in model_name_list and
     mesh_suffix_list, where the latter is one of three elements in the
     list mesh_suffix_list_per_dimension.  analytic_filename_stem is a
@@ -222,7 +226,6 @@ class BuckleyLeverettTestSuite:
     question, which in turn are translated from the elements in
     field_name_list.  If a field_name is 'Phase2::Saturation', then the
     shorthand is saturation2.
-
     """
     def __init__(self, numerical_filename_stem, model_name_list,
                  mesh_suffix_list_per_dimension, analytic_filename_stem,

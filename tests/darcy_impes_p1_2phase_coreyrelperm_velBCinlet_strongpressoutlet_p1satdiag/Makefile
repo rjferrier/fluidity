@@ -1,18 +1,9 @@
 include ../darcy_impes_common/Depend.mk
 
 input: clean
-	$(call import_python_code,batch_tools.py)
-	$(call import_python_code,test_tools.py)
-	$(call import_python_code,buckley_leverett_test_tools.py)
-	cp ../darcy_impes_common/mesh_data/line_mesh_1d_A* .
-	cp ../darcy_impes_common/mesh_data/line_mesh_1d_B* .
-	cp ../darcy_impes_common/mesh_data/line_mesh_1d_C* .
-	cp ../darcy_impes_common/mesh_data/line_mesh_1d_D* .
-	cp ../darcy_impes_common/mesh_data/square_A.msh .
-	cp ../darcy_impes_common/mesh_data/square_B.msh .
-	cp ../darcy_impes_common/mesh_data/square_C.msh .
-	cp ../darcy_impes_common/mesh_data/cube_A.msh .
-	cp ../darcy_impes_common/mesh_data/cube_B.msh .
+	cp $(FLUIDITYPATH)/tests/darcy_impes_common/mesh_data/line_*.msh .
+	cp $(FLUIDITYPATH)/tests/darcy_impes_common/mesh_data/square_*.msh .
+	cp $(FLUIDITYPATH)/tests/darcy_impes_common/mesh_data/cube_*.msh .
 
 clean:
 	rm -f *.ele
@@ -35,6 +26,3 @@ clean:
 	rm -f *.convergence 
 	rm -f *.pyc
 	rm -f error_*.txt
-	rm -f buckley_leverett_test_tools.py
-	rm -f test_tools.py
-	rm -f batch_tools.py

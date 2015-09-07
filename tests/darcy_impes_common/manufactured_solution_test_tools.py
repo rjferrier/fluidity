@@ -45,14 +45,9 @@ class Parameterisation:
       self.mesh_res = mesh_res_dict[mesh_suffix]
 
       # filenames
-      if dim==1:
-         m_t = None
-         g_e = '.sh'
-         m_e_l = ['.bound', '.ele', '.node']
-      else:
-         m_t = mesh_type
-         g_e = '.geo'
-         m_e_l = ['.msh']
+      m_t = mesh_type
+      g_e = '.geo'
+      m_e_l = ['.msh']
       self.mesh_name = join_with_underscores((self.domain_shape, 
                                               m_t, mesh_suffix))
       self.options_template_filename = "template_"+case+".diml"
@@ -73,13 +68,12 @@ class Parameterisation:
       """
       
       # dictionary entries
+      self.mesh_format = 'gmsh'
       if self.dim==1:
-         self.mesh_format = 'triangle'
          # for collapsing inappropriate wall BCs
          self.begin_rm_if_1D = '<!--'
          self.end_rm_if_1D = '-->'
       else:
-         self.mesh_format = 'gmsh'
          self.begin_rm_if_1D = ''
          self.end_rm_if_1D = ''
          
@@ -216,9 +210,6 @@ class ProcessMesh(MMSCommand):
    def __init__(self):
       MMSCommand.__init__(self)
       default_fluidity_path()
-      self.interval_path = os.environ["FLUIDITYPATH"] + "bin/interval"
-      if not os.path.isfile(self.interval_path): 
-         raise IOError("Cannot find " + self.interval_path)
       
    def execute(self, level_name, value, indent):
       # all levels record level details
@@ -268,16 +259,9 @@ class ProcessMesh(MMSCommand):
 
          # call interval or gmsh
          # TODO tell user to 'make geo' if needed
-         if self.dim==1:
-            lx=self.domain_extents[0]
-            dx=lx/float(param.mesh_res)
-            subprocess.call([self.interval_path, '0.0',
-                             str(lx), '--dx='+str(dx),
-                             param.mesh_name])
-         else:
-            subprocess.call(['gmsh', '-'+str(self.dim),
-                             param.geo_filename],
-                            stdout=open(os.devnull, 'wb'))
+         subprocess.call(['gmsh', '-'+str(self.dim),
+                          param.geo_filename],
+                         stdout=open(os.devnull, 'wb'))
 
             
 class CleanUp(MMSCommand):
@@ -357,7 +341,7 @@ class ManufacturedSolutionTestSuite:
 
 
    def write_xml(self):
-      self.deep_handler.handle( WriteXMLFile('stem', 0.05, 0.8) )
+      self.deep_handler.handle( WriteXMLFile('stem', 0.05, 0.7) )
 
 
    def preprocess(self):

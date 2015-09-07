@@ -178,16 +178,17 @@ Darcy_IMPES_Assemble.o ../include/darcy_impes_assemble_module.mod: \
    ../include/cv_shape_functions.mod ../include/cv_upwind_values.mod \
    ../include/cvtools.mod ../include/darcy_impes_assemble_type.mod \
    ../include/darcy_impes_leaching_chemical_model.mod \
-   ../include/darcy_transport_model.mod ../include/elements.mod \
-   ../include/fdebug.h ../include/fefields.mod \
-   ../include/field_derivatives.mod ../include/fields.mod \
-   ../include/fldebug.mod ../include/global_parameters.mod \
-   ../include/halos.mod ../include/parallel_tools.mod \
-   ../include/petsc_solve_state_module.mod ../include/porous_media.mod \
-   ../include/quadrature.mod ../include/signal_vars.mod \
-   ../include/sparse_matrices_fields.mod ../include/sparse_tools.mod \
-   ../include/sparse_tools_petsc.mod ../include/spud.mod \
-   ../include/state_module.mod ../include/transform_elements.mod
+   ../include/darcy_transport_model.mod \
+   ../include/elements.mod ../include/fdebug.h \
+   ../include/fefields.mod ../include/field_derivatives.mod \
+   ../include/fields.mod ../include/fldebug.mod \
+   ../include/global_parameters.mod ../include/halos.mod \
+   ../include/parallel_tools.mod ../include/petsc_solve_state_module.mod \
+   ../include/porous_media.mod ../include/quadrature.mod \
+   ../include/signal_vars.mod ../include/sparse_matrices_fields.mod \
+   ../include/sparse_tools.mod ../include/sparse_tools_petsc.mod \
+   ../include/spud.mod ../include/state_module.mod \
+   ../include/transform_elements.mod
 
 ../include/darcy_impes_assemble_type.mod: Darcy_IMPES_Assemble_type.o
 	@true
@@ -412,11 +413,12 @@ Full_Projection.o ../include/full_projection.mod: Full_Projection.F90 \
    ../include/boundary_conditions_from_options.mod ../include/elements.mod \
    ../include/fdebug.h ../include/fields_base.mod ../include/fldebug.mod \
    ../include/global_parameters.mod ../include/halos.mod \
-   ../include/multigrid.mod ../include/petsc_solve_state_module.mod \
-   ../include/petsc_tools.mod ../include/signal_vars.mod \
-   ../include/solvers.mod ../include/sparse_matrices_fields.mod \
-   ../include/sparse_tools.mod ../include/sparse_tools_petsc.mod \
-   ../include/spud.mod ../include/state_module.mod
+   ../include/multigrid.mod ../include/petsc_legacy.h \
+   ../include/petsc_solve_state_module.mod ../include/petsc_tools.mod \
+   ../include/signal_vars.mod ../include/solvers.mod \
+   ../include/sparse_matrices_fields.mod ../include/sparse_tools.mod \
+   ../include/sparse_tools_petsc.mod ../include/spud.mod \
+   ../include/state_module.mod
 
 ../include/geostrophic_pressure.mod: Geostrophic_Pressure.o
 	@true
