@@ -148,7 +148,7 @@ class StudyConvergence(SerialFunctor):
         self.report_dir = report_dir
         self.with_respect_to_resolution = with_respect_to_resolution
         
-    def setup(self, options):
+    def preamble(self, options):
         try:
             self.report_file = open('{}/{}'.format(
                 self.report_dir, self.report_filename), 'w')
@@ -158,7 +158,7 @@ class StudyConvergence(SerialFunctor):
         self.errors = {}
         self.rates = {}
 
-    def teardown(self, options):
+    def postamble(self, options):
         if self.report_file:
             self.report_file.close()
         
@@ -232,7 +232,7 @@ class WriteXml(SerialFunctor):
         self.simulation_dir = simulation_dir
         self.with_respect_to_resolution = with_respect_to_resolution
         
-    def setup(self, options):
+    def preamble(self, options):
         # the following lists will accumulate items as we loop over
         # the tree
         self.mesh_commands = []
@@ -248,7 +248,7 @@ class WriteXml(SerialFunctor):
 
     def append_commands(self, options):
         """
-        Appends a command line to the 'commands' list.  When teardown() is
+        Appends a command line to the 'commands' list.  When postamble() is
         called and the list is passed to the template engine, the
         lines will get joined together.
         """
@@ -357,7 +357,7 @@ previous_error = numpy.abs(error_{1})
         self.print_end(Success(msg), options)
 
             
-    def teardown(self, options):
+    def postamble(self, options):
         # fire up the template engine 
         env = jinja2.Environment(
             loader=jinja2.FileSystemLoader('.'))

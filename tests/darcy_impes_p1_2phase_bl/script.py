@@ -1,6 +1,6 @@
 import darcy_impes_options as base
-from options_iteration import OptionsArray, OptionsNode
-from options_iteration.utilities import smap, pmap, ExpandTemplate, RunBinary,\
+from options_iteration import OptionsArray, OptionsNode, CallableEntry
+from options_iteration.utilities import smap, pmap, ExpandTemplate, RunProgram,\
     SimpleRendering, get_nprocs
 from darcy_impes_functors import WriteXml, StudyConvergence, \
     get_error_from_field, get_error_with_1d_solution
@@ -18,6 +18,8 @@ nprocs_max = 6
 
 mesh_dir = 'meshes'
 simulation_dir = 'simulations'
+reference_solution_dir = 'reference_solution'
+
 simulator_path = '../../../bin/darcy_impes'
 
 
@@ -45,41 +47,49 @@ mesh_options_tree[1] *= OptionsArray('mesh_res', [10, 40])
 mesh_options_tree[2] *= OptionsArray('mesh_res', [10, 20])
 
 
-def get_reference_solution_filename(options, field):
-    return 'reference_solution/{0}_{1}.txt'.format(options.subcase, field)
+# def get_reference_solution_filename(options, field):
+#     return 'reference_solution/{0}_{1}.txt'.format(options.subcase, field)
 
-def get_error_snippet(options, field, variable_name):
-    return diml.error_variable.format(
-        options.subcase, get_reference_solution_filename(options, field),
-        variable_name)
+# def get_error_snippet(options, field, variable_name):
+#     return diml.error_variable.format(
+#         options.subcase, get_reference_solution_filename(options, field),
+#         variable_name)
 
+class ExaminedField:
+    "Helper structure"
+    def __init__(self, subcase, variable_name, phase_number):
+        self.field = variable_name.lower() + str(phase_number)
+        self.variable_name = variable_name
+        self.reference_solution_filename = '{}/{}_{}.txt'.format(
+            reference_solution_dir, subcase, self.field)
+        
 
 class p1satdiag:
-    gravity_snippet = ""
-    relative_permeability_relation = diml.quadratic_relperm_correlation
-    residual_saturation_snippet = ""
+    gravity_magnitude = None
+    relperm_relation = 'Corey2Phase'
+    residual_saturations = None
     initial_saturation2 = 0.
     density2 = 1.
-    def saturation2_error_snippet(self):
-        return get_error_snippet(self, 'saturation2', 'Saturation')
-    def pressure2_error_snippet(self):
-        return get_error_snippet(self, 'pressure2', 'Pressure')
-    # TO BE FIXED in options_iteration: should automatically get
+    examined_fields = [
+        ExaminedField('p1satdiag', 'Saturation', 2),
+        ExaminedField('p1satdiag', 'Pressure',   2)]
+    
+    # FIXME in options_iteration: should automatically get
     # an {OptionsArray.name: OptionsNode.name} entry
     subcase = 'p1satdiag'
-   
+
+    
 class withgrav_updip:
-    gravity_snippet = diml.gravity
-    relative_permeability_relation = diml.quadratic_relperm_correlation
-    residual_saturation_snippet = diml.residual_saturations
-    residual_saturation1 = 0.1
-    residual_saturation2 = 0.1
+    gravity_magnitude = 1.5e6
+    relperm_relation = 'Power'
+    relperm_relation_exponents = "2 2" # TODO try a filter here
+    residual_saturations = "0.1 0.1"
     initial_saturation2 = 0.1
     density2 = 2.
-    def saturation2_error_snippet(self):
-        return get_error_snippet(self, 'saturation2', 'Saturation')
-    pressure2_error_snippet = ""
-    # TO BE FIXED in options_iteration: should automatically get
+    examined_fields = [
+        ExaminedField('withgrav_updip', 'Saturation', 2)]
+    
+    # FIXME in options_iteration: should automatically get
     # an {OptionsArray.name: OptionsNode.name} entry
     subcase = 'withgrav_updip'
     
@@ -87,14 +97,15 @@ subcases = OptionsArray('subcase', [p1satdiag, withgrav_updip])
 
 
 class relpermupwind:
+    saturation_face_value = "FirstOrderUpwind"
     rel_perm_face_value = "FirstOrderUpwind"
-    sat_face_value_snippet = ""
 
 class modrelpermupwind:
+    saturation_face_value = "FiniteElement"
+    saturation_face_value_limiter = "Sweby"
     rel_perm_face_value = "RelPermOverSatUpwind"
-    sat_face_value_snippet = diml.sat_face_value_fe_sweby
 
-submodels = OptionsArray('submodel', [relpermupwind, modrelpermupwind])
+submodels = OptionsArray('submodel', ['relpermupwind', 'modrelpermupwind'])
 
 
 # build simulation options tree on top of mesh_options_tree
@@ -114,6 +125,7 @@ nprocs = get_nprocs(sim_options_tree.count_leaves(),
 # case, and populate the trees accordingly.
 
 class global_spatial_options(base.global_spatial_options):
+    mesh_dir = mesh_dir
     domain_extents = (1.0, 1.2, 0.8)
     reference_element_nums = (10, 12, 8)
     el_num_y = 2
@@ -125,6 +137,7 @@ class global_spatial_options(base.global_spatial_options):
             return diml.wall_no_normal_flow_bc
 
 class global_simulation_options(base.global_simulation_options):
+    simulation_dir = simulation_dir
     case = case_name
     simulator_path = simulator_path
     def simulation_name(self):
@@ -191,45 +204,47 @@ if 'pre' in commands:
 
     
 if 'xml' in commands:
-    smap('Expanding XML file',
-         WriteXml('mesh_res', mesh_dir=mesh_dir, 
+    smap(WriteXml('mesh_res', mesh_dir=mesh_dir, 
                   simulation_dir=simulation_dir,
                   with_respect_to_resolution=True),
-         test_options_tree)
+         test_options_tree,
+         message='Expanding XML file')
     
     
 if 'pre' in commands:
-    smap("Expanding geometry files",
-         ExpandTemplate(
-             'geo_template_filename', 'geo_filename', target_dir=mesh_dir),
-         mesh_options_tree)
+    smap(ExpandTemplate('geo_template_filename', 'geo_filename',
+                        target_dir_key='mesh_dir'),
+         mesh_options_tree,
+         message="Expanding geometry files")
     
-    smap("Expanding options files",
-         ExpandTemplate(
-             'simulation_options_template_filename',
-             'simulation_options_filename', target_dir=simulation_dir,
-             rendering_strategy=SimpleRendering(nloops=5)),
-         sim_options_tree)
+    smap(ExpandTemplate('simulation_options_template_filename',
+                        'simulation_options_filename',
+                        target_dir_key='simulation_dir',
+                        rendering_strategy=SimpleRendering(nloops=5)),
+         sim_options_tree,
+         message="Expanding options files")
 
     
 if 'mesh' in commands:
-    pmap("Meshing",
-         RunBinary('meshing_args', 'geo_filename', 'mesh_name',
-                   working_dir=mesh_dir),
-         mesh_options_tree, nprocs_max=nprocs_max, in_reverse=True)
+    pmap(RunProgram('meshing_args', 'geo_filename', 'mesh_name',
+                    working_dir_key='mesh_dir'),
+         mesh_options_tree,
+         nprocs_max=nprocs_max, in_reverse=True, message="Meshing")
 
     
 if 'run' in commands:
-    pmap("Running simulations",
-         RunBinary('simulation_args',
-                   'simulation_prerequisite_filenames',
-                   'simulation_name', working_dir=simulation_dir),
-         sim_options_tree, nprocs_max=nprocs_max, in_reverse=True)
+    pmap(RunProgram('simulation_args',
+                    'simulation_prerequisite_filenames',
+                    'simulation_name',
+                    working_dir_key='simulation_dir'),
+         sim_options_tree,
+         nprocs_max=nprocs_max, in_reverse=True,
+         message="Running simulations")
     
 if 'post' in commands:
-    smap('Postprocessing',
-         StudyConvergence('mesh_res', case_name + '.txt', 
+    smap(StudyConvergence('mesh_res', case_name + '.txt', 
                           results_dir=simulation_dir,
                           with_respect_to_resolution=True),
-         test_options_tree)
+         test_options_tree,
+         message="Postprocessing")
     

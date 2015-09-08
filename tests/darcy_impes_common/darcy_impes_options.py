@@ -18,7 +18,7 @@ Note:
     if there is to be good convergence on these meshes.
 """
 
-from options_iteration import OptionsDict, OptionsNode, OptionsArray
+from options_iteration import OptionsArray
 import re
 
 
@@ -26,7 +26,7 @@ import re
 
 def join(words):
     "Joins words with underscores."
-    return '_'.join(([w for w in words if w] ))
+    return '_'.join(([w for w in words if w]))
     
 
 ## GEOMETRY/MESHING 
