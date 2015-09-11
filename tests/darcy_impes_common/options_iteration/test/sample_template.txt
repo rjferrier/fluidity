@@ -1,1 +1,0 @@
-$fluid has a melting point of $melting_point degrees C.
