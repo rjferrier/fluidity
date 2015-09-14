@@ -80,30 +80,30 @@ def get_error_with_1d_solution(options, results_dir='.'):
     the integral over the domain can be approximated by the
     trapezium rule.
     """
-    reference_filename = options['reference_solution_filename']
+    reference_filename = options.reference_solution_filename
     check_file_exists(reference_filename)        
     [xa, va] = read_reference_solution(reference_filename)
     
-    numerical_filename = '{}/{}'.format(results_dir, options['vtu_filename'])
+    numerical_filename = '{}/{}'.format(results_dir, options.vtu_filename)
     check_file_exists(numerical_filename)        
     [xn, vn] = read_numerical_solution(numerical_filename,
-                                       options['field_descriptor'])
+                                       options.field_descriptor)
     
     vn_interp = numpy.interp(xa, xn, vn)
     eps = numpy.abs(vn_interp - va)
-    return (eps[0]/2 + sum(eps[1:-1]) + eps[-1]/2)*options['el_size_x']
+    return (eps[0]/2 + sum(eps[1:-1]) + eps[-1]/2)*options.el_size_x
    
 
 def get_error_from_field(options, results_dir='.'):
     stat_filename = '{}/{}.stat'.format(
-        results_dir, options['simulation_name'])
+        results_dir, options.simulation_name)
     check_file_exists(stat_filename)
     stat = stat_parser(stat_filename)
     
-    phase = options['phase_name']
-    var = options['error_variable_name']
-    calc_type = options['error_calculation']
-    timestep_index = options['timestep_index']
+    phase = options.phase_name
+    var = options.error_variable_name
+    calc_type = options.error_calculation
+    timestep_index = options.timestep_index
     try:
         # n.b. assume the last timestep is required
         return stat[phase][var][calc_type][timestep_index]
@@ -125,9 +125,9 @@ except KeyError:
     print '''
 Expected to find {3}::{4} in the stat file; 
 has this been defined in the options file?'''
-    raise""".format(results_dir, options['simulation_name'], var_name,
-           options['phase_name'], options['error_variable_name'],
-           options['error_calculation'], options['timestep_index'])
+    raise""".format(results_dir, options.simulation_name, var_name,
+           options.phase_name, options.error_variable_name,
+           options.error_calculation, options.timestep_index)
 
 
 class StudyConvergence(SerialFunctor):
@@ -254,19 +254,19 @@ class WriteXml(SerialFunctor):
         """
         msg = ''
 
-        if options['mesh_name'] not in self.register:
+        if options.mesh_name not in self.register:
             self.mesh_commands.append(
-                ' '.join(options['meshing_args']))
-            self.register.append(options['mesh_name'])
-        msg += '\n' + options['mesh_name']
+                ' '.join(options.meshing_args))
+            self.register.append(options.mesh_name)
+        msg += '\n' + options.mesh_name
 
-        if options['simulation_name'] not in self.register:
+        if options.simulation_name not in self.register:
             self.simulation_commands.append(
-                'echo "Running {}"'.format(options['simulation_name']))
+                'echo "Running {}"'.format(options.simulation_name))
             self.simulation_commands.append(
-                ' '.join(options['simulation_args']))
-            self.register.append(options['simulation_name'])
-        msg += '\n' + options['simulation_name']
+                ' '.join(options.simulation_args))
+            self.register.append(options.simulation_name)
+        msg += '\n' + options.simulation_name
 
         return msg
 

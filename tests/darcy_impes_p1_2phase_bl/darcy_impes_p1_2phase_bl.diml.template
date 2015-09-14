@@ -99,8 +99,8 @@
           </value>
         </prescribed>
       </vector_field>
-    </gravity>"""
-  {% endif %}  
+    </gravity>
+  {% endif %}
   </physical_parameters>
   <material_phase name="Phase1">
     <scalar_field name="Pressure" rank="0">
@@ -147,6 +147,7 @@
       <diagnostic>
         <mesh name="PressureMesh"/>
         <algorithm name="Internal"/>
+	{% if opt.saturation_face_value %}
 	<face_value name="{{ opt.saturation_face_value }}">
 	  {% if opt.saturation_face_value != 'FirstOrderUpwind' %}
           <limit_face_value>
@@ -154,6 +155,7 @@
           </limit_face_value>
 	  {% endif %}
         </face_value>
+	{% endif %}
         <convergence>
           <include_in_convergence/>
         </convergence>
@@ -170,12 +172,12 @@
 	<correlation name="{{ opt.relperm_relation }}">
 	  {% if 'Corey2Phase' not in opt.relperm_relation %}
           <exponents>
-            <real_value shape="2" rank="1">{{ opt.relperm_relation_exponents }}</real_value>
+            <real_value shape="2" rank="1">{{ opt.relperm_relation_exponents|join(' ') }}</real_value>
           </exponents>
 	  {% endif %}
-	  {% if opt.residual_sats %}
+	  {% if opt.residual_saturations %}
           <residual_saturations>
-            <real_value shape="2" rank="1">{{ opt.residual_saturations }}</real_value>
+            <real_value shape="2" rank="1">{{ opt.residual_saturations|join(' ') }}</real_value>
           </residual_saturations>
 	  {% endif %}
         </correlation>
@@ -454,8 +456,7 @@
         <consistent_interpolation/>
       </diagnostic>
     </scalar_field>
-    {% macro error_fields(examined_field) %}
-    <scalar_field name="LinearlyInterpolatedReference{{ examined_field.variable_name }}Solution">
+    {% macro error_variable(examined_field) %}<scalar_field name="InterpolatedReference{{ examined_field.variable_name }}Solution">
       <prescribed>
         <mesh name="PressureMesh"/>
         <value name="WholeMesh">
@@ -477,7 +478,7 @@
     <scalar_field name="{{ examined_field.variable_name }}AbsError">
       <diagnostic>
         <mesh name="PressureMesh"/>
-        <algorithm source_field_2_type="scalar" name="scalar_difference" source_field_1_name="{{ examined_field.variable_name }}" source_field_2_name="LinearInterpolatedAnalytical{{ examined_field.variable_name }}Solution" material_phase_support="single" source_field_1_type="scalar">
+        <algorithm source_field_2_type="scalar" name="scalar_difference" source_field_1_name="{{ examined_field.variable_name }}" source_field_2_name="InterpolatedReference{{ examined_field.variable_name }}Solution" material_phase_support="single" source_field_1_type="scalar">
           <absolute_difference/>
         </algorithm>
         <stat>
@@ -485,8 +486,7 @@
         </stat>
         <consistent_interpolation/>
       </diagnostic>
-    </scalar_field>
-    {% endmacro %}
+    </scalar_field>{% endmacro %}
     {% for ef in opt.examined_fields %}
     {{ error_variable(ef) }}
     {% endfor %}
