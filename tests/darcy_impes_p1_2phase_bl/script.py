@@ -1,10 +1,8 @@
 import darcy_impes_options as base
-from options_iteration import OptionsArray, OptionsNode, CallableEntry
+from options_iteration import OptionsArray, OptionsNode
 from options_iteration.utilities import smap, pmap, ExpandTemplate, RunProgram,\
     Jinja2Rendering, get_nprocs
-from darcy_impes_functors import WriteXml, StudyConvergence, \
-    get_error_from_field, get_error_with_1d_solution
-import diml_snippets as diml
+from darcy_impes_functors import WriteXml, StudyConvergence
 import os
 import errno
 import sys
@@ -12,30 +10,20 @@ import sys
 
 ## SETTINGS
 
-case_name = 'darcy_impes_p1_2phase_bl'
-simulation_naming_keys = ['subcase', 'submodel', 'dim', 'mesh_res']
+problem_name = 'darcy_impes_p1_2phase_bl'
+simulation_naming_keys = ['case', 'submodel', 'dim', 'mesh_res']
 nprocs_max = 6
 
 mesh_dir = 'meshes'
 simulation_dir = 'simulations'
 reference_solution_dir = 'reference_solution'
 
-simulator_path = '../../../bin/darcy_impes'
-
-
         
 ## OPTIONS TREES
 
 # initialise top level of tree for meshing
-mesh_options_tree = base.dims
-
-# only the second and third dimensions have a mesh type, and we will
-# use only the regular mesh type here
-class reg:
-    is_regular = 1
-class irreg:
-    is_regular = 0
-mesh_options_tree[1:] *= OptionsArray('mesh_type', [reg])
+mesh_options_tree = OptionsArray('dim', [base.dim1, base.dim2, base.dim3], 
+                                 name_format=lambda s: s[-1]+'d')
 
 # for MMS tests we usually assign mesh resolutions [10, 20, 40, 80] to
 # 1D, [10, 20, 40] to 2D, etc.  But in the BL case the solution
@@ -48,12 +36,16 @@ mesh_options_tree[2] *= OptionsArray('mesh_res', [10, 20])
 
 
 class ExaminedField:
-    "Helper structure"
-    def __init__(self, subcase, variable_name, phase_number):
+    """
+    Helper structure recording a field's phase number, variable name
+    and details of its reference solution.  The field will be examined
+    for convergence.
+    """
+    def __init__(self, case, variable_name, phase_number):
         self.field = variable_name.lower() + str(phase_number)
         self.variable_name = variable_name
         self.reference_solution_filename = '{}/{}_{}.txt'.format(
-            reference_solution_dir, subcase, self.field)
+            reference_solution_dir, case, self.field)
 
 class p1satdiag:
     gravity_magnitude = None
@@ -71,7 +63,7 @@ class withgrav_updip:
     examined_fields = [
         ExaminedField('withgrav_updip', 'Saturation', 2)]
     
-subcases = OptionsArray('subcase', [p1satdiag, withgrav_updip])
+cases = OptionsArray('case', [p1satdiag, withgrav_updip])
 
 
 class relpermupwind:
@@ -87,11 +79,14 @@ submodels = OptionsArray('submodel', [relpermupwind, modrelpermupwind])
 
 
 # build simulation options tree on top of mesh_options_tree
-sim_options_tree = subcases * submodels * mesh_options_tree
+sim_options_tree = cases * submodels * mesh_options_tree
 
 # do the same for a testing tree, where additionally we're interested
 # in certain fields
-test_options_tree = sim_options_tree * OptionsArray('field', ['saturation2'])
+test_options_tree = OptionsNode()
+test_options_tree *= sim_options_tree
+test_options_tree[0] *= OptionsArray('field', ['pressure2', 'saturation2'])
+test_options_tree[1] *= OptionsArray('field', ['saturation2'])
 
 nprocs = get_nprocs(sim_options_tree.count_leaves(),
                     nprocs_max=nprocs_max)
@@ -104,20 +99,16 @@ nprocs = get_nprocs(sim_options_tree.count_leaves(),
 
 class global_spatial_options(base.global_spatial_options):
     mesh_dir = mesh_dir
-    domain_extents = (1.0, 1.2, 0.8)
-    reference_element_nums = (10, 12, 8)
-    el_num_y = 2
-    el_num_z = 2
-    def wall_flow_bc_snippet(self):
-        if self.dim_number == 1:
-            return ''
-        else:
-            return diml.wall_no_normal_flow_bc
+    def element_numbers(self):
+        # don't really care about element numbers in y and z
+        return [self.mesh_res, 2, 2]
+    def mesh_name(self):
+        return self.geometry + '_' + self.str(['mesh_res'])
 
+    
 class global_simulation_options(base.global_simulation_options):
     simulation_dir = simulation_dir
-    case = case_name
-    simulator_path = simulator_path
+    problem_name = problem_name
     def simulation_name(self):
         return self.str(simulation_naming_keys)
     def mesh_prefix_relative_to_simulation(self):
@@ -125,9 +116,8 @@ class global_simulation_options(base.global_simulation_options):
     relperm_relation = 'PowerLaw'
     relperm_relation_exponents = (2, 2)
 
-
+    
 class global_testing_options(base.global_testing_options):
-    case = case_name
     user_id = 'rferrier'
     nprocs = nprocs
     xml_target_filename = 'darcy_impes_p1_2phase_bl.xml'
@@ -136,7 +126,7 @@ class global_testing_options(base.global_testing_options):
     error_calculation = 'integral'
     timestep_index = -1
     def report_filename(self): 
-        self.case + '_report.txt'
+        self.problem_name + '_report.txt'
     def error_variable_name(self): 
         return self.variable_name + 'AbsError'
     def max_error_norm(self):
@@ -144,10 +134,17 @@ class global_testing_options(base.global_testing_options):
         Since we're already testing convergence rates, let's only test the
         absolute error norm for the first mesh.
         """
-        if self['mesh_res'] == 10:
+        scale = None
+        # TODO replace get_node_info in options_iteration
+        if self.get_node_info.is_first('mesh'):
             if 'saturation' in self.field:
-                return 0.1
-        return None
+                scale = 1.
+            elif 'pressure' in self.field:
+                scale = 1.e6
+        if scale:
+            return 0.1 * scale
+        else:
+            return None
     
 
 mesh_options_tree.update(global_spatial_options)
@@ -190,7 +187,9 @@ if 'xml' in commands:
     
 if 'pre' in commands:
     smap(ExpandTemplate('geo_template_filename', 'geo_filename',
-                        target_dir_key='mesh_dir'),
+                        target_dir_key='mesh_dir',
+                        rendering_strategy=Jinja2Rendering({
+                            'extensions': [base.RaiseExtension]})),
          mesh_options_tree,
          message="Expanding geometry files")
     

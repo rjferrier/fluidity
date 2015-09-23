@@ -94,7 +94,7 @@
           <mesh name="ElementWiseMesh"/>
           <value name="WholeMesh">
             <constant>
-              <real_value shape="{{ opt.dim_number }}" dim1="dim" rank="1">{{ opt.gravity_direction }}</real_value>
+              <real_value shape="{{ opt.dim_number }}" dim1="dim" rank="1">{{ opt.gravity_direction|join(' ') }}</real_value>
             </constant>
           </value>
         </prescribed>
@@ -230,7 +230,7 @@
 	{% if opt.dim_number > 1 %}
         <boundary_conditions name="wall_flow">
           <surface_ids>
-            <integer_value shape="{{ opt.wall_num }}" rank="1">{{ opt.wall_ids }}</integer_value>
+            <integer_value shape="{{ opt.wall_ids|length }}" rank="1">{{ opt.wall_ids|join(' ') }}</integer_value>
           </surface_ids>
           <type name="no_normal_flow"/>
         </boundary_conditions>
@@ -415,7 +415,7 @@
 	{% if opt.dim_number > 1 %}
         <boundary_conditions name="wall_flow">
           <surface_ids>
-            <integer_value shape="{{ opt.wall_num }}" rank="1">{{ opt.wall_ids }}</integer_value>
+            <integer_value shape="{{ opt.wall_ids|length }}" rank="1">{{ opt.wall_ids|join(' ') }}</integer_value>
           </surface_ids>
           <type name="no_normal_flow"/>
         </boundary_conditions>

@@ -1,6 +1,6 @@
 include ../darcy_impes_common/Depend.mk
 
-export TEMPLATES = xml.template *.geo.template
+export TEMPLATES = *.xml.template *.geo.template
 
 input: clean
 
@@ -18,8 +18,8 @@ clean:
 %.geo.template:
 	cp $(FLUIDITYPATH)/tests/darcy_impes_common/mesh_data/$@ .
 
-%.template:
-	cp $(FLUIDITYPATH)/tests/darcy_impes_common/$@ .
+%.xml.template:
+	cp $(FLUIDITYPATH)/tools/data/$@ .
 
 # regenerate everything needed by the Fluidity testing framework
 regen: pre xml clean

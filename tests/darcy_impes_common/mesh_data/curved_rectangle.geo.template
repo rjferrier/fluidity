@@ -1,7 +1,7 @@
-lx = $domain_length_x;
-ly = $domain_length_y;
-lz = $domain_length_z;
-dx = $el_size_x;
+{% if opt.have_regular_mesh %}{% raise "this geometry is not set up to have a regular mesh" %}{% endif %}
+lx = {{ opt.domain_extents[0] }};
+ly = {{ opt.domain_extents[1] }};
+dx = {{ opt.element_sizes[0] }};
 sqrt2 = 1.4142135623730951;
 
 Point(1) = {  0,  0,  0, dx};
