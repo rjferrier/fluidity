@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE testproblem SYSTEM "regressiontest.dtd">
+{# <!-- This template is used by options_iteration_extended_utilities.py --> #}
+<testproblem>
+  <name>{{ problem.problem_name }}</name>
+  <owner userid="{{ problem.user_id }}"/>
+  <tags>{{ problem.simulation_options_extension }}</tags>
+  <problem_definition length="{{ problem.test_length }}" nprocs="1">
+    <command_line>
+startdir=$PWD
+cd {{ mesh_dir }}
+{{ '\n'.join(mesh_commands) }}
+cd $startdir
+cd {{ simulation_dir }}
+{{ '\n'.join(simulation_commands) }}
+cd $startdir
+    </command_line>
+  </problem_definition>
+  <variables>
+    
+    {% for var in abscissa_variables %}
+    <variable name="{{ var.name }}" language="python">
+      {{ var.name }} = {{ var.value }}
+    </variable>
+    {% endfor %}
+
+    {% for var in error_variables %}
+    <variable name="{{ var.name }}" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('{{ simulation_dir }}/{{ var.simulation_name }}.stat')
+try:
+    {{ var.name }} = stat['{{ var.phase_name }}']['{{ var.name }}']['{{ var.calculation }}'][{{ var.timestep_index }}]
+except KeyError:
+    print '''
+Expected to find {{ var.phase_name }}::{{ var.name }} in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    {% endfor %}
+    
+    {% for var in rate_variables %}
+    <variable name="{{ var.name }}" language="python">
+import numpy
+current_abscissa = float(abscissa_{{ var.key }})
+current_error = numpy.abs(error_{{ var.key }})
+previous_abscissa = float(abscissa_{{ var.key_prev }})
+previous_error = numpy.abs(error_{{ var.key_prev }})
+{{ var.name }} = \
+    {{ var.sign }}numpy.log(current_error/previous_error) / \
+    numpy.log(current_abscissa/previous_abscissa)
+    </variable>
+    {% endfor %}
+  </variables>
+  
+  <pass_tests>
+    <test name="Solvers converged" language="python">
+import os
+files = os.listdir('{{ simulation_dir }}')
+assert("matrixdump" not in files and "matrixdump.info" not in files)
+    </test>
+    
+    {% for var in error_variables + rate_variables %}{% if var.threshold %}
+    <test name="{{ var.name }} &{{ var.rel_op }}; {{ var.threshold }}" language="python"> 
+try:
+    assert({{ var.name }} &{{ var.rel_op }}; {{ var.threshold }})
+except AssertionError:
+    print {{ var.name }}
+    raise
+    </test> 
+    {% endif %}{% endfor %}
+  </pass_tests>
+  <warn_tests>
+  </warn_tests>
+</testproblem>
