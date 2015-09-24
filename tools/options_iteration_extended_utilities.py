@@ -180,30 +180,31 @@ class WriteXmlForConvergenceTests(SerialFunctor):
 
         
     def append_abscissa_variable(self, options):
-        name = 'abscissa_' + options.str()
+        label = 'abscissa_' + options.str()
         self.abscissa_variables.append({
-            'name': name,
+            'label': label,
             'value': options[self.convergence_abscissa_key] })
-        return '\nassigned ' + self.abscissa_variables[-1]['name']
+        return '\nassigned ' + label
 
         
     def append_error_variable(self, options):
-        name = 'error_' + options.str()
+        label = 'error_' + options.str()
         self.error_variables.append({
-            'name': name,
+            'label': label,
             'simulation_name': options.simulation_name,
             'phase_name': options.phase_name,
+            'name': options.variable_name,
             'calculation': options.error_calculation,
             'timestep_index': options.error_timestep_index,
             'rel_op': 'lt',
             'threshold': options.max_error_norm })
-        return '\nassigned ' + self.error_variables[-1]['name']
+        return '\nassigned ' + label
 
 
-    def get_rate_name(self, options):
+    def get_rate_label(self, options):
         stem = options.str(exclude=[self.convergence_abscissa_key])
         # use the previous and current abscissae to form suffices for
-        # the name
+        # the label
         try:
             suf1 = options.str(only=[self.convergence_abscissa_key],
                                relative={self.convergence_abscissa_key: -1})
@@ -215,19 +216,19 @@ class WriteXmlForConvergenceTests(SerialFunctor):
 
 
     def append_rate_variable(self, options):
-        name = self.get_rate_name(options)
-        if not name:
+        label = self.get_rate_label(options)
+        if not label:
             # abort if rate cannot be calculated
             return ''
         self.rate_variables.append({
-            'name': name,
+            'label': label,
             'key': options.str(),
             'key_prev': options.str(
                 relative={self.convergence_abscissa_key: -1}),
             'sign': '-' if self.with_respect_to_resolution else '',
             'rel_op': 'gt',
             'threshold': options.min_convergence_rate })
-        return '\nassigned ' + self.rate_variables[-1]['name']
+        return '\nassigned ' + label
 
 
     def __call__(self, options):
