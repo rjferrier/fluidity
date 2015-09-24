@@ -1,12 +1,18 @@
 <?xml version='1.0' encoding='utf-8'?>
 <darcy_impes_options>
+  <simulation_name>
+    <string_value lines="1">{{ opt.simulation_name }}</string_value>
+    <comment>Saturation sources have been computed using SymPy.  Velocity divergence minus saturation source should sum to zero over the phases:
+{{ opt.divergence_check }}
+</comment>
+  </simulation_name>
   <geometry>
     <dimension>
       <integer_value rank="0">{{ opt.dim_number }}</integer_value>
     </dimension>
     <mesh name="CoordinateMesh">
       <!-- assume that simulations take place in a directory parallel
-           to opt.mesh_dir/ -->
+           to {{ opt.mesh_dir }}/ -->
       <from_file file_name="../{{ opt.mesh_dir }}/{{ opt.mesh_name }}">
         <format name="gmsh"/>
         <stat>
@@ -407,9 +413,9 @@
         <algorithm name="scalar_python_diagnostic" material_phase_support="single">
           <string_value type="code" lines="20" language="python">
 S2_field = state.scalar_fields["Saturation"]
+Sr2 = {{ opt.residual_saturations[1] }}
 for n in range(field.node_count):
    S2 = S2_field.node_val(n)
-   # TODO: check this
    pc = {{ opt.capillary_pressure|format_sympy }}
    # a minus sign is needed because pressure2 appears to be computed
    # in the source code as pressure1 + capillary_pressure

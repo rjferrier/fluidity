@@ -35,7 +35,7 @@ def div(vector):
     except TypeError:
         # not a list/tuple - differentiate wrt x
         return diff(vector, spacetime[0])
-
+    
 def mag(vector):
     try:
         return sqrt(sum([component**2 for component in vector]))
@@ -119,6 +119,9 @@ class global_options(base.global_options):
             result *= variations[i]
         return result
 
+    saturation2_min = 0.2
+    saturation2_threshold = 0.0
+    
     def saturation2(self):
         "Invented saturation profile"
         x, y, z, t = self.Xt_nondim
@@ -126,9 +129,18 @@ class global_options(base.global_options):
         result = self.saturation2_scale * 1./(1 + t)
         # invent a variation with each spatial dimension, then
         # multiply them together to create a multidimensional profile
-        variations = [exp(x), 3*(1. - y)*(1.5*y)**2, 3*(1. - z)*(1.5*z)**2]
+        variations = [exp(-x), 3*(1. - y)*(1.5*y)**2, 3*(1. - z)*(1.5*z)**2]
         for i in range(self.dim_number):
             result *= variations[i]
+            
+        # linear adjustment - make sure phase-2 saturation does not go
+        # to zero (or to saturation2_threshold) and therefore does not
+        # cause an infinite capillary pressure
+        a = (self.saturation2_scale - self.saturation2_min)/ \
+            (self.saturation2_scale - self.saturation2_threshold)
+        b = self.saturation2_scale*(1. - a)
+        result = a*result + b
+        
         return result
 
     def pressures(self):
@@ -138,6 +150,11 @@ class global_options(base.global_options):
     def saturations(self):
         return (1 - self.saturation2, self.saturation2)
 
+    def gravity_direction(self):
+        result = [0] * self.dim_number
+        result[0] = 1
+        return result
+    
     def gravity(self):
         return [self.gravity_magnitude * g_dir \
                 for g_dir in self.gravity_direction]
@@ -179,11 +196,12 @@ class global_options(base.global_options):
             S = self.saturations[i]
             u = self.darcy_velocities[i]
             results.append(
-                diff(S, t) + div(u))
+                diff(self.porosity*S, t) + div(u))
         return results
                 
-    def saturation_source_1(self):
-        return self.saturation_sources[0]
+    def divergence_check(self):
+        return sum(div(u) - q for u, q in \
+                   zip(self.darcy_velocities, self.saturation_sources))
 
     
     # SIMULATION
@@ -195,7 +213,7 @@ class global_options(base.global_options):
     def dump_period(self):
         return self.finish_time
     
-    reference_timestep_number = 10
+    reference_timestep_number = 20   # TODO tighten this up
     
     def time_step(self):
         "Maintains a constant Courant number"
@@ -246,19 +264,21 @@ class group1:
     def normal_velocity2_dirichlet_boundary_ids(self):
         return (self.inlet_id,) + self.wall_ids
 
-    # quadratic relperm
-    relperm_relation_name = 'PowerLaw'
-    relperm_relation_exponents = (2, 2)
-    residual_saturations = (0.2, 0.3)
-    
+    # Brooks-Corey relation
+    relperm_relation_name = 'Corey2Phase'
+    relperm_relation_exponents = None
+    residual_saturations = (0.05, 0.1)
     def relperms(self):
         S = self.saturations
         Sr = self.residual_saturations
         n = self.relperm_relation_exponents
-        return ((S[0]-Sr[0])**n[0],
-                (S[1]-Sr[1])**n[1])
-
-    capillary_pressure = 0
+        return ((S[0] - Sr[0])**4,
+                (1. - (S[0] - Sr[0])**2) * (1. - (S[0] - Sr[0]))**2)
+    
+    def capillary_pressure(self):
+        S2 = Symbol('S2')
+        Sr2 = Symbol('Sr2')
+        return self.pressure1_scale/10. * ((S2 - Sr2)/(1. - Sr2))**(-0.5)
     
     # misc.
     saturation_face_value = None
@@ -274,21 +294,19 @@ class group2:
         return (self.inlet_id,) + self.wall_ids
     normal_velocity2_dirichlet_boundary_ids = ()
 
-    # Brooks-Corey relation
-    relperm_relation_name = 'Corey2Phase'
-    relperm_relation_exponents = None
-    residual_saturations = (0.05, 0.)
+    # quadratic relperm
+    relperm_relation_name = 'PowerLaw'
+    relperm_relation_exponents = (2, 2)
+    residual_saturations = (0.2, 0.3)
+    
     def relperms(self):
         S = self.saturations
         Sr = self.residual_saturations
         n = self.relperm_relation_exponents
-        return ((S[0] - Sr[0])**4,
-                (1. - (S[0] - Sr[0])**2) * (1. - (S[0] - Sr[0]))**2)
-    
-    def capillary_pressure(self):
-        S2 = Symbol('S2')
-        Sr2 = self.residual_saturations[1]
-        return self.pressure1_scale/10. * ((S2 - Sr2)/(1. - Sr2))**(-0.5)
+        return ((S[0]-Sr[0])**n[0],
+                (S[1]-Sr[1])**n[1])
+
+    capillary_pressure = 0
     
     # misc.
     saturation_face_value = "FiniteElement"

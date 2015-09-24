@@ -20,19 +20,16 @@ def join(*words):
 class dim1:
     dim_number = 1
     geometry = "line"
-    gravity_direction = (-1.,)
     wall_ids = ()
 
 class dim2:
     dim_number = 2
     geometry = "rectangle"
-    gravity_direction = (-1., 0.)
     wall_ids = (3, 4)
 
 class dim3:
     dim_number = 3
     geometry = "cuboid"
-    gravity_direction = (-1., 0., 0.)
     wall_ids = (3, 4, 5, 6)
 
     

@@ -113,6 +113,10 @@ class global_simulation_options(base.global_simulation_options):
         return self.str(simulation_naming_keys)
     def mesh_prefix_relative_to_simulation(self):
         return '../{}/'.format(mesh_dir)
+    def gravity_direction(self):
+        result = [0] * self.dim_number
+        result[0] = -1
+        return result
     relperm_relation = 'PowerLaw'
     relperm_relation_exponents = (2, 2)
 
