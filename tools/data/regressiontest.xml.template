@@ -19,17 +19,17 @@ cd $startdir
   <variables>
     
     {% for var in abscissa_variables %}
-    <variable name="{{ var.name }}" language="python">
-      {{ var.name }} = {{ var.value }}
+    <variable name="{{ var.label }}" language="python">
+      {{ var.label }} = {{ var.value }}
     </variable>
     {% endfor %}
 
     {% for var in error_variables %}
-    <variable name="{{ var.name }}" language="python">
+    <variable name="{{ var.label }}" language="python">
       from fluidity_tools import stat_parser
 stat = stat_parser('{{ simulation_dir }}/{{ var.simulation_name }}.stat')
 try:
-    {{ var.name }} = stat['{{ var.phase_name }}']['{{ var.name }}']['{{ var.calculation }}'][{{ var.timestep_index }}]
+    {{ var.label }} = stat['{{ var.phase_name }}']['{{ var.name }}']['{{ var.calculation }}'][{{ var.timestep_index }}]
 except KeyError:
     print '''
 Expected to find {{ var.phase_name }}::{{ var.name }} in the stat file; 
@@ -39,13 +39,13 @@ has this been defined in the options file?'''
     {% endfor %}
     
     {% for var in rate_variables %}
-    <variable name="{{ var.name }}" language="python">
+    <variable name="{{ var.label }}" language="python">
 import numpy
 current_abscissa = float(abscissa_{{ var.key }})
 current_error = numpy.abs(error_{{ var.key }})
 previous_abscissa = float(abscissa_{{ var.key_prev }})
 previous_error = numpy.abs(error_{{ var.key_prev }})
-{{ var.name }} = \
+{{ var.label }} = \
     {{ var.sign }}numpy.log(current_error/previous_error) / \
     numpy.log(current_abscissa/previous_abscissa)
     </variable>
@@ -60,11 +60,11 @@ assert("matrixdump" not in files and "matrixdump.info" not in files)
     </test>
     
     {% for var in error_variables + rate_variables %}{% if var.threshold %}
-    <test name="{{ var.name }} &{{ var.rel_op }}; {{ var.threshold }}" language="python"> 
+    <test name="{{ var.label }} &{{ var.rel_op }}; {{ var.threshold }}" language="python"> 
 try:
-    assert({{ var.name }} &{{ var.rel_op }}; {{ var.threshold }})
+    assert({{ var.label }} &{{ var.rel_op }}; {{ var.threshold }})
 except AssertionError:
-    print {{ var.name }}
+    print {{ var.label }}
     raise
     </test> 
     {% endif %}{% endfor %}
