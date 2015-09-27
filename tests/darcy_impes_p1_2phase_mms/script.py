@@ -66,8 +66,7 @@ def format_sympy(expression):
         
     # replace x, y, z with X[0], X[1], X[2]
     for i, x in enumerate('xyz'):
-        result = sub('([^a-z]){}([^a-z])'.format(x),
-                     '\\1X[{}]\\2'.format(i), result)
+        result = sub('\\b{}\\b'.format(x), 'X[{}]'.format(i), result)
         
     return result
 
@@ -98,9 +97,6 @@ class global_options(base.global_options):
     # pressure and saturation scales (arbitrary, but see note 2)
     pressure1_scale = 1000.
     saturation2_scale = 0.5
-
-    def pressure1_dirichlet_boundary_ids(self):
-        return self.wall_ids + (self.outlet_id,)
 
     def Xt_nondim(self):
         "Symbols x,..,t, nondimensionalised by domain_extents and finish_time."
@@ -142,6 +138,17 @@ class global_options(base.global_options):
         result = a*result + b
         
         return result
+    
+    def capillary_pressure(self):
+        """
+        Analytic capillary pressure (with respect to space-time).  Depends
+        on capillary_pressure_wrt_saturation, which is used by the
+        options file.
+        """
+        S2 = self.saturations[1]
+        Sr2 = self.residual_saturations[1]
+        return self.capillary_pressure_wrt_saturation.\
+            subs([('S2', S2), ('Sr2', Sr2)])
 
     def pressures(self):
         pressure2 = self.pressure1 - self.capillary_pressure
@@ -176,13 +183,14 @@ class global_options(base.global_options):
     
     def boundary_normal_darcy_velocities(self):
         """
-        Returns the Darcy velocity normal flow at each Cartesian boundary
-        (xmin, xmax, ymin, ..., zmax).
+        Returns the Darcy velocity normal flow at each boundary (xmin,
+        xmax, ymin, ..., zmax), assuming domain is orthotopic.
         """
         results = []
         for u in self.darcy_velocities:
             phase_results = []
             for i in range(self.dim_number):
+                # reverse the sign if going *into* the domain
                 for sign in (-1, 1):
                     phase_results.append(sign * u[i])
             results.append(phase_results)
@@ -213,7 +221,7 @@ class global_options(base.global_options):
     def dump_period(self):
         return self.finish_time
     
-    reference_timestep_number = 20   # TODO tighten this up
+    reference_timestep_number = 20   # TODO: tighten this up
     
     def time_step(self):
         "Maintains a constant Courant number"
@@ -229,18 +237,16 @@ class global_options(base.global_options):
     
     user_id = user_id
     xml_target_filename = problem_name + '.xml'
-    test_length = 'short'   # TODO change to medium?
+    test_length = 'short'   # TODO: change to medium?
     min_convergence_rate = 0.7
-    def report_filename(self): 
-        self.problem_name + '_report.txt'
+    
     def max_error_norm(self):
         """
         Since we're already testing convergence rates, let's only test the
         absolute error norm for the first mesh.
         """
         scale = None
-        # TODO replace get_node_info in options_iteration
-        if self.get_node_info('mesh_res').is_first():
+        if self.get_position('mesh_res').is_first():
             if 'saturation' in self.field:
                 scale = 1.
             elif 'pressure' in self.field:
@@ -249,6 +255,9 @@ class global_options(base.global_options):
             return 0.1 * scale
         else:
             return None
+
+    def report_filename(self): 
+        self.problem_name + '_report.txt'
 
 
 #---------------------------------------------------------------------
@@ -260,9 +269,15 @@ class group1:
     # orthotopic geometry, normal flow BCs
     geometry_prefix = ''
     have_regular_mesh = True
-    saturation2_dirichlet_boundary_ids = ()
-    def normal_velocity2_dirichlet_boundary_ids(self):
+    def pressure1_dirichlet_boundary_ids(self):
+        return (self.outlet_id,) + self.wall_ids
+    def saturation2_dirichlet_boundary_ids(self):
         return (self.inlet_id,) + self.wall_ids
+    normal_velocity2_dirichlet_boundary_ids = ()
+    # TODO: change to velocity BCs
+    # saturation2_dirichlet_boundary_ids = ()
+    # def normal_velocity2_dirichlet_boundary_ids(self):
+    #     return (self.inlet_id,) + self.wall_ids
 
     # Brooks-Corey relation
     relperm_relation_name = 'Corey2Phase'
@@ -275,14 +290,15 @@ class group1:
         return ((S[0] - Sr[0])**4,
                 (1. - (S[0] - Sr[0])**2) * (1. - (S[0] - Sr[0]))**2)
     
-    def capillary_pressure(self):
+    def capillary_pressure_wrt_saturation(self):
         S2 = Symbol('S2')
         Sr2 = Symbol('Sr2')
         return self.pressure1_scale/10. * ((S2 - Sr2)/(1. - Sr2))**(-0.5)
     
     # misc.
-    saturation_face_value = None
-    rel_perm_face_value = "FirstOrderUpwind"
+    saturation_face_value = "FiniteElement"
+    saturation_face_value_limiter = "Sweby"
+    rel_perm_face_value = "RelPermOverSatUpwind"
 
     
 class group2:
@@ -290,6 +306,10 @@ class group2:
     def geometry_prefix(self):
         return '' if self.dim_number == 1 else 'curved'
     have_regular_mesh = False
+    def pressure1_dirichlet_boundary_ids(self):
+        # TODO: figure out why we need pressure over all the
+        # boundaries for the curved geometry case
+        return (self.inlet_id, self.outlet_id,) + self.wall_ids
     def saturation2_dirichlet_boundary_ids(self):
         return (self.inlet_id,) + self.wall_ids
     normal_velocity2_dirichlet_boundary_ids = ()
@@ -306,12 +326,12 @@ class group2:
         return ((S[0]-Sr[0])**n[0],
                 (S[1]-Sr[1])**n[1])
 
+    capillary_pressure_wrt_saturation = 0
     capillary_pressure = 0
-    
+
     # misc.
-    saturation_face_value = "FiniteElement"
-    saturation_face_value_limiter = "Sweby"
-    rel_perm_face_value = "RelPermOverSatUpwind"
+    saturation_face_value = None
+    rel_perm_face_value = "FirstOrderUpwind"
 
 
 #---------------------------------------------------------------------
@@ -330,21 +350,25 @@ general_options_tree = dims
 general_options_tree['1d'] *= OptionsArray('mesh_res', [10, 20, 40, 80])
 general_options_tree['2d'] *= OptionsArray('mesh_res', [10, 20, 40])
 general_options_tree['3d'] *= OptionsArray('mesh_res', [10, 20])
+
 general_options_tree = root * groups * general_options_tree
 
-# for od in general_options_tree.collapse():
-#     print od.str(formatter='tree')
 
 # for postprocessing, we additionally want to iterate over a couple of fields
+
+class pressure1:
+    phase_name = 'Phase1'
+    error_variable_name = 'PressureAbsError'
+
+class saturation2:
+    phase_name = 'Phase2'
+    error_variable_name = 'SaturationAbsError'
+
 test_options_tree = general_options_tree * \
-                    OptionsArray('field', ['pressure1', 'saturation2'])
+                    OptionsArray('field', [pressure1, saturation2])
 
-# # update all trees with global options
-# general_options_tree.update(global_options)
-# test_options_tree.update(global_options)
-
-check_entries(general_options_tree)
-check_entries(test_options_tree)
+# check_entries(general_options_tree)
+# check_entries(test_options_tree)
 
 
 

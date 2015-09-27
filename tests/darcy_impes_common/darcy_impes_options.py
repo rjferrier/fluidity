@@ -111,30 +111,13 @@ class global_options:
     # POSTPROCESSING OPTIONS
 
     xml_template_filename = 'regressiontest.xml.template'
-    norm = 1
+    error_aggregation = 'l2norm'
+    error_timestep_index = -1
     
     def vtu_filename(self):
         return '{}_1.vtu'.format(self.simulation_name)
 
-    # the following entries will depend on the pending 'field'
-    # entry which takes the form
-    # <variable-name-in-lower-case><phase-number>
-    field = 'to_come'
-    field_pat = '(.*)([0-9])'
-
-    def phase_name(self):
-        return 'Phase' + re.sub(self.field_pat, '\\2', self.field)
-        
-    def variable_name(self):
-        return re.sub(
-            self.field_pat, '\\1', self.field).capitalize()
-
-    def error_variable_name(self): 
-        return self.variable_name + 'AbsError'
     
-    error_calculation = 'integral'
-    error_timestep_index = -1
-
 
 ## HELPERS
 

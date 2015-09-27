@@ -36,12 +36,12 @@ def get_error_from_field(options, results_dir='.'):
     stat = stat_parser(stat_filename)
     
     phase = options.phase_name
-    var = options.variable_name
-    calc_type = options.error_calculation
+    var = options.error_variable_name
+    agg = options.error_aggregation
     index = options.error_timestep_index
     try:
         # n.b. assume the last timestep is required
-        return stat[phase][var][calc_type][index]
+        return stat[phase][var][agg][index]
     except KeyError:
         raise Failure(
             ("\nget_error_from_field expected to find \n"+\

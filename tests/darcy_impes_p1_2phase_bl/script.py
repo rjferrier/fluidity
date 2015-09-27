@@ -140,7 +140,7 @@ class global_testing_options(base.global_testing_options):
         """
         scale = None
         # TODO replace get_node_info in options_iteration
-        if self.get_node_info.is_first('mesh'):
+        if self.get_position('mesh_res').is_first():
             if 'saturation' in self.field:
                 scale = 1.
             elif 'pressure' in self.field:

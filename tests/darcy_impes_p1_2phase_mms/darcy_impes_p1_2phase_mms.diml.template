@@ -1,5 +1,18 @@
 <?xml version='1.0' encoding='utf-8'?>
 <darcy_impes_options>
+  <!-- P1: {{ opt.pressures[0]|format_sympy }} -->
+  <!-- PC: {{ opt.capillary_pressure|format_sympy }} -->
+  <!-- S2: {{ opt.saturations[1]|format_sympy }} -->
+  
+  <!-- U2_x: {{ opt.darcy_velocities[1][0]|format_sympy }} -->
+  {% if opt.dim_number > 1 %}
+  <!-- U2_y: {{ opt.darcy_velocities[1][1]|format_sympy }} -->
+  {% if opt.dim_number > 2 %}
+  <!-- U2_z: {{ opt.darcy_velocities[1][2]|format_sympy }} -->
+  {% endif %}
+  {% endif %}
+  
+  <!-- QS2: {{ opt.saturation_sources[1]|format_sympy }} -->
   <simulation_name>
     <string_value lines="1">{{ opt.simulation_name }}</string_value>
     <comment>Saturation sources have been computed using SymPy.  Velocity divergence minus saturation source should sum to zero over the phases:
@@ -378,12 +391,11 @@
         <stat>
           <include_cv_stats/>
         </stat>
-        <do_not_recalculate/>
       </prescribed>
     </scalar_field>
     <scalar_field name="{{ examined_field_name }}AbsError">
       <diagnostic>
-        <mesh name="PressureMesh"/>
+        <mesh name="{% if examined_field_name == 'Pressure' %}PressureMesh{% else %}CoordinateMesh{% endif %}"/>
         <algorithm source_field_2_type="scalar" name="scalar_difference" source_field_1_name="{{ examined_field_name }}" source_field_2_name="Analytical{{ examined_field_name }}Solution" material_phase_support="single" source_field_1_type="scalar">
           <absolute_difference/>
         </algorithm>
@@ -406,7 +418,7 @@
         <consistent_interpolation/>
       </diagnostic>
     </scalar_field>
-    {% if opt.capillary_pressure %}
+    {% if opt.capillary_pressure_wrt_saturation %}
     <scalar_field name="CapilliaryPressure" rank="0">
       <diagnostic>
         <mesh name="PressureMesh"/>
@@ -416,7 +428,7 @@ S2_field = state.scalar_fields["Saturation"]
 Sr2 = {{ opt.residual_saturations[1] }}
 for n in range(field.node_count):
    S2 = S2_field.node_val(n)
-   pc = {{ opt.capillary_pressure|format_sympy }}
+   pc = {{ opt.capillary_pressure_wrt_saturation|format_sympy }}
    # a minus sign is needed because pressure2 appears to be computed
    # in the source code as pressure1 + capillary_pressure
    field.set(n, -pc)</string_value>

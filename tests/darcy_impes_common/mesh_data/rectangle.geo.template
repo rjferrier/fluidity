@@ -1,7 +1,7 @@
 lx = {{ opt.domain_extents[0] }};
 ly = {{ opt.domain_extents[1] }};
 nx = {{ opt.element_numbers[0] }};
-nx = {{ opt.element_numbers[1] }};
+ny = {{ opt.element_numbers[1] }};
 
 Point(1) = {0, 0, 0, lx/nx};
 
