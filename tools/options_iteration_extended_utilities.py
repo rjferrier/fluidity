@@ -82,7 +82,7 @@ class StudyConvergence(SerialFunctor):
             self.report_file.close()
         
     def __call__(self, options):
-        current_id = options.str()
+        current_id = options.get_string()
         
         # n.b. need to convert from integer to float
         current_abs = float(options[self.abscissa_key])
@@ -100,7 +100,7 @@ class StudyConvergence(SerialFunctor):
         # now try loading the values corresponding to the previous
         # mesh resolution and calculate the convergence rate
         try:
-            previous_id = options.str(relative={self.abscissa_key: -1})
+            previous_id = options.get_string(relative={self.abscissa_key: -1})
             
             previous_abs = self.abscissae[previous_id]
             previous_err = self.errors[previous_id]
@@ -180,7 +180,7 @@ class WriteXmlForConvergenceTests(SerialFunctor):
 
         
     def append_abscissa_variable(self, options):
-        label = 'abscissa_' + options.str()
+        label = 'abscissa_' + options.get_string()
         self.abscissa_variables.append({
             'label': label,
             'value': options[self.convergence_abscissa_key] })
@@ -188,7 +188,7 @@ class WriteXmlForConvergenceTests(SerialFunctor):
 
         
     def append_error_variable(self, options):
-        label = 'error_' + options.str()
+        label = 'error_' + options.get_string()
         self.error_variables.append({
             'label': label,
             'simulation_name': options.simulation_name,
@@ -202,16 +202,16 @@ class WriteXmlForConvergenceTests(SerialFunctor):
 
 
     def get_rate_label(self, options):
-        stem = options.str(exclude=[self.convergence_abscissa_key])
+        stem = options.get_string(exclude=[self.convergence_abscissa_key])
         # use the previous and current abscissae to form suffices for
         # the label
         try:
-            suf1 = options.str(only=[self.convergence_abscissa_key],
-                               relative={self.convergence_abscissa_key: -1})
+            suf1 = options.get_string(only=[self.convergence_abscissa_key],
+            relative={self.convergence_abscissa_key: -1})
         except IndexError:
             # abort if the previous one doesn't exist
             return None
-        suf2 = options.str(only=[self.convergence_abscissa_key])
+        suf2 = options.get_string(only=[self.convergence_abscissa_key])
         return 'rate_' + join([stem, suf1, suf2])
 
 
@@ -222,8 +222,8 @@ class WriteXmlForConvergenceTests(SerialFunctor):
             return ''
         self.rate_variables.append({
             'label': label,
-            'key': options.str(),
-            'key_prev': options.str(
+            'key': options.get_string(),
+            'key_prev': options.get_string(
                 relative={self.convergence_abscissa_key: -1}),
             'sign': '-' if self.with_respect_to_resolution else '',
             'rel_op': 'gt',
