@@ -1,21 +1,42 @@
 """
-Some common options for Darcy IMPES tests.  These can be converted
-to dictionaries and tree-like data structures via the
-options_iteration package, and mapped to .geo and .diml files via the
-Jinja 2 template engine.
+Some common code for Darcy IMPES tests.  The classes defining
+options can be converted to dictionaries and tree-like data structures
+via the options_iteration package, and mapped to .geo and .diml files
+via the Jinja 2 template engine.
 """
 
-from options_iteration import OptionsArray
-import re
+from os import getenv, makedirs
+from sys import argv
+from errno import EEXIST
+from options_iteration import \
+    OptionsArray, smap, pmap, ExpandTemplate, RunProgram, Jinja2Rendering
+from options_iteration_extended_utilities import \
+    WriteXmlForConvergenceTests, StudyConvergence, join
 
-def join(*words):
-    "Helper function.  Joins nonblank words with underscores."
-    return '_'.join(([w for w in words if w]))
+
+#------------------------------------------------------------------------------
+# GLOBALS
+
+nprocs_max = 6
+
+problem_name = getenv('PROBLEM')
+if not problem_name:
+    raise Exception('define PROBLEM as an environment variable')
+
+mesh_dir = getenv('MESHPATH')
+if not mesh_dir:
+    mesh_dir = '.'
+    
+simulation_dir = getenv('SIMPATH')
+if not simulation_dir:
+    simulation_dir = '.'
 
 
-## GEOMETRY/MESHING 
+#------------------------------------------------------------------------------
+# OPTIONS 
 
-# Define options that change with problem dimensions
+#------------------------------------------------------------------------------
+# problem dimensions
 
 class dim1:
     dim_number = 1
@@ -33,17 +54,30 @@ class dim3:
     wall_ids = (3, 4, 5, 6)
 
     
-# Define some universal options.  Some items (mesh_res,
-# domain_extents, ...) have been left for the user to define; a
-# KeyError will be raised if these items are still missing at runtime.
-class global_options:
+# Make an array of these dimension options.  name_format changes
+# dim<N> into <N>d.
+dims = OptionsArray('dim', [dim1, dim2, dim3], 
+                    name_format=lambda s: s[-1]+'d')
+
     
-    # SPATIAL/MESHING OPTIONS
+#------------------------------------------------------------------------------
+# common to all
+
+# some items (e.g. mesh_res) have been left for the user to define; a
+# KeyError will be raised if these items are still missing at runtime
+class common:
+
+    # globals can be bundled with the other options for convenience
+    problem_name = problem_name
+    mesh_dir = mesh_dir
+    simulation_dir = simulation_dir
+    
+    # SPATIAL/MESHING
 
     geometry_prefix = ''        # can be blank or 'curved'
     inlet_id = 1
     outlet_id = 2
-    have_regular_mesh = True 
+    have_regular_mesh = True
 
     # Construct a filename for the geometry template.  Because this
     # entry takes the form of a function, it will self-evaluate
@@ -52,9 +86,14 @@ class global_options:
         return join(self.geometry_prefix, self.geometry) + '.geo.template'
         
     # etc.
+    def mesh_type(self):
+        if self.dim_number == 1:
+            return ''
+        return 'reg' if self.have_regular_mesh else 'irreg'
     def mesh_name(self):
         return join(
-            self.geometry_prefix, self.geometry, str(int(self.mesh_res)))
+            self.geometry_prefix, self.geometry, self.mesh_type,
+            str(int(self.mesh_res)))
     def geo_filename(self):
         return self.mesh_name + '.geo'
     def mesh_filename(self): 
@@ -80,14 +119,15 @@ class global_options:
                 for i in range(3)]
 
 
-    # SIMULATION OPTIONS
-    
+    # SIMULATION
+
     simulator_path = '../../../bin/darcy_impes'
     simulation_options_extension = 'diml'
     simulation_error_extension = 'out'
     reference_timestep_number = 10
     preconditioner = 'mg'
     adaptive_timestepping = False
+    
 
     def simulation_options_template_filename(self):
         return '{}.{}.template'.format(
@@ -108,18 +148,33 @@ class global_options:
                               self.simulation_error_extension)
 
 
-    # POSTPROCESSING OPTIONS
+    # RESULTS/TESTS
 
     xml_template_filename = 'regressiontest.xml.template'
+    xml_target_filename = problem_name + '.xml'
+
+    def error_variable_name(self):
+        return self.variable_name + 'AbsError'        
+    
     error_aggregation = 'l2norm'
     error_timestep_index = -1
+    min_convergence_rate = 0.7
     
-    def vtu_filename(self):
-        return '{}_1.vtu'.format(self.simulation_name)
+    def max_error_norm(self):
+        """
+        Since we're already testing convergence rates, let's only test the
+        absolute error norm for the first mesh.
+        """
+        if self.get_position('mesh_res').is_first():
+            # recover and loop over the embedded list of dictionaries
+            # describing fields
+            for od in self.examined_fields:
+                if self.field == od.field:
+                    return od.error_tolerance
 
-    
 
-## HELPERS
+#------------------------------------------------------------------------------
+# JINJA2 HELPERS
 
 try:
     from jinja2 import nodes
@@ -153,3 +208,80 @@ class RaiseExtension(Extension):
 
     def _raise(self, msg, caller):
         raise TemplateRuntimeError(msg)
+
+
+#------------------------------------------------------------------------------
+# MAIN FUNCTION
+
+def main(mesh_options_tree, sim_options_tree, test_options_tree,
+         jinja2_filters={}):
+
+    # get/default directives from the command line
+    commands = argv[1:]
+    if len(commands) == 0:
+        commands = ['pre', 'mesh', 'sim', 'post']
+    
+    # make directories if necessary
+    if 'pre' in commands:
+        for d in [mesh_dir, simulation_dir]:
+            try:
+                makedirs(d)
+            except OSError as exc:
+                if exc.errno != EEXIST:
+                    raise
+
+    # expand templates in serial
+    if 'pre' in commands:
+        renderer = Jinja2Rendering({'extensions': [RaiseExtension]},
+                                   filters=jinja2_filters)
+        
+        smap(ExpandTemplate('geo_template_filename', 'geo_filename',
+                            target_dir_key='mesh_dir',
+                            rendering_strategy=renderer),
+             mesh_options_tree,
+             message="Expanding geometry files")
+        
+        smap(ExpandTemplate('simulation_options_template_filename',
+                            'simulation_options_filename',
+                            target_dir_key='simulation_dir',
+                            rendering_strategy=renderer),
+             sim_options_tree,
+             message="Expanding options files")
+    
+        
+    # mesh and run simulations in parallel
+    if 'run' in commands:
+        pmap(RunProgram('meshing_args', 'geo_filename', 'mesh_name',
+                        working_dir_key='mesh_dir'),
+             mesh_options_tree,
+             nprocs_max=nprocs_max, in_reverse=True,
+             clean_entries=True, recursive_freeze=True,
+             message="Meshing")
+    
+        pmap(RunProgram('simulation_args',
+                        'simulation_prerequisite_filenames',
+                        'simulation_name',
+                        working_dir_key='simulation_dir'),
+             sim_options_tree,
+             nprocs_max=nprocs_max, in_reverse=True,
+             clean_entries=True, recursive_freeze=True,
+             message="Running simulations")
+        
+        
+    # study convergence in serial
+    if 'post' in commands:
+        smap(StudyConvergence('mesh_res', 'convergence.txt', 
+                              results_dir=simulation_dir,
+                              with_respect_to_resolution=True),
+             test_options_tree,
+             message="Postprocessing")
+        
+        
+    # write tests in serial
+    if 'xml' in commands:
+        smap(WriteXmlForConvergenceTests('mesh_res', mesh_dir=mesh_dir, 
+                                         simulation_dir=simulation_dir,
+                                         with_respect_to_resolution=True),
+             test_options_tree,
+             message='Expanding XML file')
+    

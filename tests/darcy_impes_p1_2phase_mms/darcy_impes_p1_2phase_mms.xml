@@ -1,0 +1,1001 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE testproblem SYSTEM "regressiontest.dtd">
+<testproblem>
+  <name>darcy_impes_p1_2phase_mms</name>
+  <owner userid="rferrier"/>
+  <tags>diml</tags>
+  <problem_definition length="short" nprocs="1">
+    <command_line>
+startdir=$PWD
+cd meshes
+gmsh -1 line_10.geo -o line_10.msh
+gmsh -1 line_20.geo -o line_20.msh
+gmsh -1 line_40.geo -o line_40.msh
+gmsh -1 line_80.geo -o line_80.msh
+gmsh -2 rectangle_irreg_10.geo -o rectangle_irreg_10.msh
+gmsh -2 rectangle_irreg_20.geo -o rectangle_irreg_20.msh
+gmsh -2 rectangle_irreg_40.geo -o rectangle_irreg_40.msh
+gmsh -2 curved_rectangle_irreg_10.geo -o curved_rectangle_irreg_10.msh
+gmsh -2 curved_rectangle_irreg_20.geo -o curved_rectangle_irreg_20.msh
+gmsh -2 curved_rectangle_irreg_40.geo -o curved_rectangle_irreg_40.msh
+gmsh -3 curved_cuboid_irreg_10.geo -o curved_cuboid_irreg_10.msh
+gmsh -3 curved_cuboid_irreg_20.geo -o curved_cuboid_irreg_20.msh
+cd $startdir
+cd simulations
+echo "Running group1_1d_10"
+../../../bin/darcy_impes group1_1d_10.diml
+echo "Running group1_1d_20"
+../../../bin/darcy_impes group1_1d_20.diml
+echo "Running group1_1d_40"
+../../../bin/darcy_impes group1_1d_40.diml
+echo "Running group1_1d_80"
+../../../bin/darcy_impes group1_1d_80.diml
+echo "Running group1_2d_10"
+../../../bin/darcy_impes group1_2d_10.diml
+echo "Running group1_2d_20"
+../../../bin/darcy_impes group1_2d_20.diml
+echo "Running group1_2d_40"
+../../../bin/darcy_impes group1_2d_40.diml
+echo "Running group2_1d_10"
+../../../bin/darcy_impes group2_1d_10.diml
+echo "Running group2_1d_20"
+../../../bin/darcy_impes group2_1d_20.diml
+echo "Running group2_1d_40"
+../../../bin/darcy_impes group2_1d_40.diml
+echo "Running group2_1d_80"
+../../../bin/darcy_impes group2_1d_80.diml
+echo "Running group2_2d_10"
+../../../bin/darcy_impes group2_2d_10.diml
+echo "Running group2_2d_20"
+../../../bin/darcy_impes group2_2d_20.diml
+echo "Running group2_2d_40"
+../../../bin/darcy_impes group2_2d_40.diml
+echo "Running group2_3d_10"
+../../../bin/darcy_impes group2_3d_10.diml
+echo "Running group2_3d_20"
+../../../bin/darcy_impes group2_3d_20.diml
+cd $startdir
+    </command_line>
+  </problem_definition>
+  <variables>
+    
+    <variable name="abscissa_group1_1d_10_pressure1" language="python">
+abscissa_group1_1d_10_pressure1 = 10
+    </variable>
+    <variable name="abscissa_group1_1d_10_saturation2" language="python">
+abscissa_group1_1d_10_saturation2 = 10
+    </variable>
+    <variable name="abscissa_group1_1d_20_pressure1" language="python">
+abscissa_group1_1d_20_pressure1 = 20
+    </variable>
+    <variable name="abscissa_group1_1d_20_saturation2" language="python">
+abscissa_group1_1d_20_saturation2 = 20
+    </variable>
+    <variable name="abscissa_group1_1d_40_pressure1" language="python">
+abscissa_group1_1d_40_pressure1 = 40
+    </variable>
+    <variable name="abscissa_group1_1d_40_saturation2" language="python">
+abscissa_group1_1d_40_saturation2 = 40
+    </variable>
+    <variable name="abscissa_group1_1d_80_pressure1" language="python">
+abscissa_group1_1d_80_pressure1 = 80
+    </variable>
+    <variable name="abscissa_group1_1d_80_saturation2" language="python">
+abscissa_group1_1d_80_saturation2 = 80
+    </variable>
+    <variable name="abscissa_group1_2d_10_pressure1" language="python">
+abscissa_group1_2d_10_pressure1 = 10
+    </variable>
+    <variable name="abscissa_group1_2d_10_saturation2" language="python">
+abscissa_group1_2d_10_saturation2 = 10
+    </variable>
+    <variable name="abscissa_group1_2d_20_pressure1" language="python">
+abscissa_group1_2d_20_pressure1 = 20
+    </variable>
+    <variable name="abscissa_group1_2d_20_saturation2" language="python">
+abscissa_group1_2d_20_saturation2 = 20
+    </variable>
+    <variable name="abscissa_group1_2d_40_pressure1" language="python">
+abscissa_group1_2d_40_pressure1 = 40
+    </variable>
+    <variable name="abscissa_group1_2d_40_saturation2" language="python">
+abscissa_group1_2d_40_saturation2 = 40
+    </variable>
+    <variable name="abscissa_group2_1d_10_pressure1" language="python">
+abscissa_group2_1d_10_pressure1 = 10
+    </variable>
+    <variable name="abscissa_group2_1d_10_saturation2" language="python">
+abscissa_group2_1d_10_saturation2 = 10
+    </variable>
+    <variable name="abscissa_group2_1d_20_pressure1" language="python">
+abscissa_group2_1d_20_pressure1 = 20
+    </variable>
+    <variable name="abscissa_group2_1d_20_saturation2" language="python">
+abscissa_group2_1d_20_saturation2 = 20
+    </variable>
+    <variable name="abscissa_group2_1d_40_pressure1" language="python">
+abscissa_group2_1d_40_pressure1 = 40
+    </variable>
+    <variable name="abscissa_group2_1d_40_saturation2" language="python">
+abscissa_group2_1d_40_saturation2 = 40
+    </variable>
+    <variable name="abscissa_group2_1d_80_pressure1" language="python">
+abscissa_group2_1d_80_pressure1 = 80
+    </variable>
+    <variable name="abscissa_group2_1d_80_saturation2" language="python">
+abscissa_group2_1d_80_saturation2 = 80
+    </variable>
+    <variable name="abscissa_group2_2d_10_pressure1" language="python">
+abscissa_group2_2d_10_pressure1 = 10
+    </variable>
+    <variable name="abscissa_group2_2d_10_saturation2" language="python">
+abscissa_group2_2d_10_saturation2 = 10
+    </variable>
+    <variable name="abscissa_group2_2d_20_pressure1" language="python">
+abscissa_group2_2d_20_pressure1 = 20
+    </variable>
+    <variable name="abscissa_group2_2d_20_saturation2" language="python">
+abscissa_group2_2d_20_saturation2 = 20
+    </variable>
+    <variable name="abscissa_group2_2d_40_pressure1" language="python">
+abscissa_group2_2d_40_pressure1 = 40
+    </variable>
+    <variable name="abscissa_group2_2d_40_saturation2" language="python">
+abscissa_group2_2d_40_saturation2 = 40
+    </variable>
+    <variable name="abscissa_group2_3d_10_pressure1" language="python">
+abscissa_group2_3d_10_pressure1 = 10
+    </variable>
+    <variable name="abscissa_group2_3d_10_saturation2" language="python">
+abscissa_group2_3d_10_saturation2 = 10
+    </variable>
+    <variable name="abscissa_group2_3d_20_pressure1" language="python">
+abscissa_group2_3d_20_pressure1 = 20
+    </variable>
+    <variable name="abscissa_group2_3d_20_saturation2" language="python">
+abscissa_group2_3d_20_saturation2 = 20
+    </variable>
+
+    <variable name="error_group1_1d_10_pressure1" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group1_1d_10.stat')
+try:
+    error_group1_1d_10_pressure1 = stat['Phase1']['PressureAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase1::PressureAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group1_1d_10_saturation2" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group1_1d_10.stat')
+try:
+    error_group1_1d_10_saturation2 = stat['Phase2']['SaturationAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group1_1d_20_pressure1" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group1_1d_20.stat')
+try:
+    error_group1_1d_20_pressure1 = stat['Phase1']['PressureAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase1::PressureAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group1_1d_20_saturation2" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group1_1d_20.stat')
+try:
+    error_group1_1d_20_saturation2 = stat['Phase2']['SaturationAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group1_1d_40_pressure1" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group1_1d_40.stat')
+try:
+    error_group1_1d_40_pressure1 = stat['Phase1']['PressureAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase1::PressureAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group1_1d_40_saturation2" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group1_1d_40.stat')
+try:
+    error_group1_1d_40_saturation2 = stat['Phase2']['SaturationAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group1_1d_80_pressure1" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group1_1d_80.stat')
+try:
+    error_group1_1d_80_pressure1 = stat['Phase1']['PressureAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase1::PressureAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group1_1d_80_saturation2" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group1_1d_80.stat')
+try:
+    error_group1_1d_80_saturation2 = stat['Phase2']['SaturationAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group1_2d_10_pressure1" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group1_2d_10.stat')
+try:
+    error_group1_2d_10_pressure1 = stat['Phase1']['PressureAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase1::PressureAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group1_2d_10_saturation2" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group1_2d_10.stat')
+try:
+    error_group1_2d_10_saturation2 = stat['Phase2']['SaturationAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group1_2d_20_pressure1" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group1_2d_20.stat')
+try:
+    error_group1_2d_20_pressure1 = stat['Phase1']['PressureAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase1::PressureAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group1_2d_20_saturation2" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group1_2d_20.stat')
+try:
+    error_group1_2d_20_saturation2 = stat['Phase2']['SaturationAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group1_2d_40_pressure1" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group1_2d_40.stat')
+try:
+    error_group1_2d_40_pressure1 = stat['Phase1']['PressureAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase1::PressureAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group1_2d_40_saturation2" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group1_2d_40.stat')
+try:
+    error_group1_2d_40_saturation2 = stat['Phase2']['SaturationAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group2_1d_10_pressure1" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group2_1d_10.stat')
+try:
+    error_group2_1d_10_pressure1 = stat['Phase1']['PressureAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase1::PressureAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group2_1d_10_saturation2" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group2_1d_10.stat')
+try:
+    error_group2_1d_10_saturation2 = stat['Phase2']['SaturationAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group2_1d_20_pressure1" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group2_1d_20.stat')
+try:
+    error_group2_1d_20_pressure1 = stat['Phase1']['PressureAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase1::PressureAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group2_1d_20_saturation2" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group2_1d_20.stat')
+try:
+    error_group2_1d_20_saturation2 = stat['Phase2']['SaturationAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group2_1d_40_pressure1" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group2_1d_40.stat')
+try:
+    error_group2_1d_40_pressure1 = stat['Phase1']['PressureAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase1::PressureAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group2_1d_40_saturation2" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group2_1d_40.stat')
+try:
+    error_group2_1d_40_saturation2 = stat['Phase2']['SaturationAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group2_1d_80_pressure1" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group2_1d_80.stat')
+try:
+    error_group2_1d_80_pressure1 = stat['Phase1']['PressureAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase1::PressureAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group2_1d_80_saturation2" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group2_1d_80.stat')
+try:
+    error_group2_1d_80_saturation2 = stat['Phase2']['SaturationAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group2_2d_10_pressure1" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group2_2d_10.stat')
+try:
+    error_group2_2d_10_pressure1 = stat['Phase1']['PressureAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase1::PressureAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group2_2d_10_saturation2" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group2_2d_10.stat')
+try:
+    error_group2_2d_10_saturation2 = stat['Phase2']['SaturationAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group2_2d_20_pressure1" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group2_2d_20.stat')
+try:
+    error_group2_2d_20_pressure1 = stat['Phase1']['PressureAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase1::PressureAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group2_2d_20_saturation2" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group2_2d_20.stat')
+try:
+    error_group2_2d_20_saturation2 = stat['Phase2']['SaturationAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group2_2d_40_pressure1" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group2_2d_40.stat')
+try:
+    error_group2_2d_40_pressure1 = stat['Phase1']['PressureAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase1::PressureAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group2_2d_40_saturation2" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group2_2d_40.stat')
+try:
+    error_group2_2d_40_saturation2 = stat['Phase2']['SaturationAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group2_3d_10_pressure1" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group2_3d_10.stat')
+try:
+    error_group2_3d_10_pressure1 = stat['Phase1']['PressureAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase1::PressureAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group2_3d_10_saturation2" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group2_3d_10.stat')
+try:
+    error_group2_3d_10_saturation2 = stat['Phase2']['SaturationAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group2_3d_20_pressure1" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group2_3d_20.stat')
+try:
+    error_group2_3d_20_pressure1 = stat['Phase1']['PressureAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase1::PressureAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+    <variable name="error_group2_3d_20_saturation2" language="python">
+      from fluidity_tools import stat_parser
+stat = stat_parser('simulations/group2_3d_20.stat')
+try:
+    error_group2_3d_20_saturation2 = stat['Phase2']['SaturationAbsError']['l2norm'][-1]
+except KeyError:
+    print '''
+Expected to find Phase2::SaturationAbsError in the stat file; 
+has this been defined in the options file?'''
+    raise
+    </variable>
+  </variables>
+  
+  <pass_tests>
+    <test name="Solvers converged" language="python">
+import os
+files = os.listdir('simulations')
+assert("matrixdump" not in files and "matrixdump.info" not in files)
+    </test>
+
+    
+    <test name="error_group1_1d_10_pressure1 &lt; 100.0" language="python">
+try:
+    assert(error_group1_1d_10_pressure1 &lt; 100.0)
+except AssertionError:
+    print error_group1_1d_10_pressure1
+    raise
+    </test>
+
+    <test name="error_group1_1d_10_saturation2 &lt; 0.05" language="python">
+try:
+    assert(error_group1_1d_10_saturation2 &lt; 0.05)
+except AssertionError:
+    print error_group1_1d_10_saturation2
+    raise
+    </test>
+
+    <test name="error_group1_2d_10_pressure1 &lt; 100.0" language="python">
+try:
+    assert(error_group1_2d_10_pressure1 &lt; 100.0)
+except AssertionError:
+    print error_group1_2d_10_pressure1
+    raise
+    </test>
+
+    <test name="error_group1_2d_10_saturation2 &lt; 0.05" language="python">
+try:
+    assert(error_group1_2d_10_saturation2 &lt; 0.05)
+except AssertionError:
+    print error_group1_2d_10_saturation2
+    raise
+    </test>
+
+    <test name="error_group2_1d_10_pressure1 &lt; 100.0" language="python">
+try:
+    assert(error_group2_1d_10_pressure1 &lt; 100.0)
+except AssertionError:
+    print error_group2_1d_10_pressure1
+    raise
+    </test>
+
+    <test name="error_group2_1d_10_saturation2 &lt; 0.05" language="python">
+try:
+    assert(error_group2_1d_10_saturation2 &lt; 0.05)
+except AssertionError:
+    print error_group2_1d_10_saturation2
+    raise
+    </test>
+
+    <test name="error_group2_2d_10_pressure1 &lt; 100.0" language="python">
+try:
+    assert(error_group2_2d_10_pressure1 &lt; 100.0)
+except AssertionError:
+    print error_group2_2d_10_pressure1
+    raise
+    </test>
+
+    <test name="error_group2_2d_10_saturation2 &lt; 0.05" language="python">
+try:
+    assert(error_group2_2d_10_saturation2 &lt; 0.05)
+except AssertionError:
+    print error_group2_2d_10_saturation2
+    raise
+    </test>
+
+    <test name="error_group2_3d_10_pressure1 &lt; 100.0" language="python">
+try:
+    assert(error_group2_3d_10_pressure1 &lt; 100.0)
+except AssertionError:
+    print error_group2_3d_10_pressure1
+    raise
+    </test>
+
+    <test name="error_group2_3d_10_saturation2 &lt; 0.05" language="python">
+try:
+    assert(error_group2_3d_10_saturation2 &lt; 0.05)
+except AssertionError:
+    print error_group2_3d_10_saturation2
+    raise
+    </test>
+
+
+    <test name="rate_group1_1d_pressure1_10_20 &gt; 0.7" language="python">
+
+import numpy
+current_abscissa = float(abscissa_group1_1d_20_pressure1)
+current_error = numpy.abs(error_group1_1d_20_pressure1)
+previous_abscissa = float(abscissa_group1_1d_10_pressure1)
+previous_error = numpy.abs(error_group1_1d_10_pressure1)
+rate_group1_1d_pressure1_10_20 = \
+    -numpy.log(current_error/previous_error) / \
+    numpy.log(current_abscissa/previous_abscissa)
+
+try:
+    assert(rate_group1_1d_pressure1_10_20 &gt; 0.7)
+except AssertionError:
+    print rate_group1_1d_pressure1_10_20
+    raise
+    </test>
+
+    <test name="rate_group1_1d_saturation2_10_20 &gt; 0.7" language="python">
+
+import numpy
+current_abscissa = float(abscissa_group1_1d_20_saturation2)
+current_error = numpy.abs(error_group1_1d_20_saturation2)
+previous_abscissa = float(abscissa_group1_1d_10_saturation2)
+previous_error = numpy.abs(error_group1_1d_10_saturation2)
+rate_group1_1d_saturation2_10_20 = \
+    -numpy.log(current_error/previous_error) / \
+    numpy.log(current_abscissa/previous_abscissa)
+
+try:
+    assert(rate_group1_1d_saturation2_10_20 &gt; 0.7)
+except AssertionError:
+    print rate_group1_1d_saturation2_10_20
+    raise
+    </test>
+
+    <test name="rate_group1_1d_pressure1_20_40 &gt; 0.7" language="python">
+
+import numpy
+current_abscissa = float(abscissa_group1_1d_40_pressure1)
+current_error = numpy.abs(error_group1_1d_40_pressure1)
+previous_abscissa = float(abscissa_group1_1d_20_pressure1)
+previous_error = numpy.abs(error_group1_1d_20_pressure1)
+rate_group1_1d_pressure1_20_40 = \
+    -numpy.log(current_error/previous_error) / \
+    numpy.log(current_abscissa/previous_abscissa)
+
+try:
+    assert(rate_group1_1d_pressure1_20_40 &gt; 0.7)
+except AssertionError:
+    print rate_group1_1d_pressure1_20_40
+    raise
+    </test>
+
+    <test name="rate_group1_1d_saturation2_20_40 &gt; 0.7" language="python">
+
+import numpy
+current_abscissa = float(abscissa_group1_1d_40_saturation2)
+current_error = numpy.abs(error_group1_1d_40_saturation2)
+previous_abscissa = float(abscissa_group1_1d_20_saturation2)
+previous_error = numpy.abs(error_group1_1d_20_saturation2)
+rate_group1_1d_saturation2_20_40 = \
+    -numpy.log(current_error/previous_error) / \
+    numpy.log(current_abscissa/previous_abscissa)
+
+try:
+    assert(rate_group1_1d_saturation2_20_40 &gt; 0.7)
+except AssertionError:
+    print rate_group1_1d_saturation2_20_40
+    raise
+    </test>
+
+    <test name="rate_group1_1d_pressure1_40_80 &gt; 0.7" language="python">
+
+import numpy
+current_abscissa = float(abscissa_group1_1d_80_pressure1)
+current_error = numpy.abs(error_group1_1d_80_pressure1)
+previous_abscissa = float(abscissa_group1_1d_40_pressure1)
+previous_error = numpy.abs(error_group1_1d_40_pressure1)
+rate_group1_1d_pressure1_40_80 = \
+    -numpy.log(current_error/previous_error) / \
+    numpy.log(current_abscissa/previous_abscissa)
+
+try:
+    assert(rate_group1_1d_pressure1_40_80 &gt; 0.7)
+except AssertionError:
+    print rate_group1_1d_pressure1_40_80
+    raise
+    </test>
+
+    <test name="rate_group1_1d_saturation2_40_80 &gt; 0.7" language="python">
+
+import numpy
+current_abscissa = float(abscissa_group1_1d_80_saturation2)
+current_error = numpy.abs(error_group1_1d_80_saturation2)
+previous_abscissa = float(abscissa_group1_1d_40_saturation2)
+previous_error = numpy.abs(error_group1_1d_40_saturation2)
+rate_group1_1d_saturation2_40_80 = \
+    -numpy.log(current_error/previous_error) / \
+    numpy.log(current_abscissa/previous_abscissa)
+
+try:
+    assert(rate_group1_1d_saturation2_40_80 &gt; 0.7)
+except AssertionError:
+    print rate_group1_1d_saturation2_40_80
+    raise
+    </test>
+
+    <test name="rate_group1_2d_pressure1_10_20 &gt; 0.7" language="python">
+
+import numpy
+current_abscissa = float(abscissa_group1_2d_20_pressure1)
+current_error = numpy.abs(error_group1_2d_20_pressure1)
+previous_abscissa = float(abscissa_group1_2d_10_pressure1)
+previous_error = numpy.abs(error_group1_2d_10_pressure1)
+rate_group1_2d_pressure1_10_20 = \
+    -numpy.log(current_error/previous_error) / \
+    numpy.log(current_abscissa/previous_abscissa)
+
+try:
+    assert(rate_group1_2d_pressure1_10_20 &gt; 0.7)
+except AssertionError:
+    print rate_group1_2d_pressure1_10_20
+    raise
+    </test>
+
+    <test name="rate_group1_2d_saturation2_10_20 &gt; 0.7" language="python">
+
+import numpy
+current_abscissa = float(abscissa_group1_2d_20_saturation2)
+current_error = numpy.abs(error_group1_2d_20_saturation2)
+previous_abscissa = float(abscissa_group1_2d_10_saturation2)
+previous_error = numpy.abs(error_group1_2d_10_saturation2)
+rate_group1_2d_saturation2_10_20 = \
+    -numpy.log(current_error/previous_error) / \
+    numpy.log(current_abscissa/previous_abscissa)
+
+try:
+    assert(rate_group1_2d_saturation2_10_20 &gt; 0.7)
+except AssertionError:
+    print rate_group1_2d_saturation2_10_20
+    raise
+    </test>
+
+    <test name="rate_group1_2d_pressure1_20_40 &gt; 0.7" language="python">
+
+import numpy
+current_abscissa = float(abscissa_group1_2d_40_pressure1)
+current_error = numpy.abs(error_group1_2d_40_pressure1)
+previous_abscissa = float(abscissa_group1_2d_20_pressure1)
+previous_error = numpy.abs(error_group1_2d_20_pressure1)
+rate_group1_2d_pressure1_20_40 = \
+    -numpy.log(current_error/previous_error) / \
+    numpy.log(current_abscissa/previous_abscissa)
+
+try:
+    assert(rate_group1_2d_pressure1_20_40 &gt; 0.7)
+except AssertionError:
+    print rate_group1_2d_pressure1_20_40
+    raise
+    </test>
+
+    <test name="rate_group1_2d_saturation2_20_40 &gt; 0.7" language="python">
+
+import numpy
+current_abscissa = float(abscissa_group1_2d_40_saturation2)
+current_error = numpy.abs(error_group1_2d_40_saturation2)
+previous_abscissa = float(abscissa_group1_2d_20_saturation2)
+previous_error = numpy.abs(error_group1_2d_20_saturation2)
+rate_group1_2d_saturation2_20_40 = \
+    -numpy.log(current_error/previous_error) / \
+    numpy.log(current_abscissa/previous_abscissa)
+
+try:
+    assert(rate_group1_2d_saturation2_20_40 &gt; 0.7)
+except AssertionError:
+    print rate_group1_2d_saturation2_20_40
+    raise
+    </test>
+
+    <test name="rate_group2_1d_pressure1_10_20 &gt; 0.7" language="python">
+
+import numpy
+current_abscissa = float(abscissa_group2_1d_20_pressure1)
+current_error = numpy.abs(error_group2_1d_20_pressure1)
+previous_abscissa = float(abscissa_group2_1d_10_pressure1)
+previous_error = numpy.abs(error_group2_1d_10_pressure1)
+rate_group2_1d_pressure1_10_20 = \
+    -numpy.log(current_error/previous_error) / \
+    numpy.log(current_abscissa/previous_abscissa)
+
+try:
+    assert(rate_group2_1d_pressure1_10_20 &gt; 0.7)
+except AssertionError:
+    print rate_group2_1d_pressure1_10_20
+    raise
+    </test>
+
+    <test name="rate_group2_1d_saturation2_10_20 &gt; 0.7" language="python">
+
+import numpy
+current_abscissa = float(abscissa_group2_1d_20_saturation2)
+current_error = numpy.abs(error_group2_1d_20_saturation2)
+previous_abscissa = float(abscissa_group2_1d_10_saturation2)
+previous_error = numpy.abs(error_group2_1d_10_saturation2)
+rate_group2_1d_saturation2_10_20 = \
+    -numpy.log(current_error/previous_error) / \
+    numpy.log(current_abscissa/previous_abscissa)
+
+try:
+    assert(rate_group2_1d_saturation2_10_20 &gt; 0.7)
+except AssertionError:
+    print rate_group2_1d_saturation2_10_20
+    raise
+    </test>
+
+    <test name="rate_group2_1d_pressure1_20_40 &gt; 0.7" language="python">
+
+import numpy
+current_abscissa = float(abscissa_group2_1d_40_pressure1)
+current_error = numpy.abs(error_group2_1d_40_pressure1)
+previous_abscissa = float(abscissa_group2_1d_20_pressure1)
+previous_error = numpy.abs(error_group2_1d_20_pressure1)
+rate_group2_1d_pressure1_20_40 = \
+    -numpy.log(current_error/previous_error) / \
+    numpy.log(current_abscissa/previous_abscissa)
+
+try:
+    assert(rate_group2_1d_pressure1_20_40 &gt; 0.7)
+except AssertionError:
+    print rate_group2_1d_pressure1_20_40
+    raise
+    </test>
+
+    <test name="rate_group2_1d_saturation2_20_40 &gt; 0.7" language="python">
+
+import numpy
+current_abscissa = float(abscissa_group2_1d_40_saturation2)
+current_error = numpy.abs(error_group2_1d_40_saturation2)
+previous_abscissa = float(abscissa_group2_1d_20_saturation2)
+previous_error = numpy.abs(error_group2_1d_20_saturation2)
+rate_group2_1d_saturation2_20_40 = \
+    -numpy.log(current_error/previous_error) / \
+    numpy.log(current_abscissa/previous_abscissa)
+
+try:
+    assert(rate_group2_1d_saturation2_20_40 &gt; 0.7)
+except AssertionError:
+    print rate_group2_1d_saturation2_20_40
+    raise
+    </test>
+
+    <test name="rate_group2_1d_pressure1_40_80 &gt; 0.7" language="python">
+
+import numpy
+current_abscissa = float(abscissa_group2_1d_80_pressure1)
+current_error = numpy.abs(error_group2_1d_80_pressure1)
+previous_abscissa = float(abscissa_group2_1d_40_pressure1)
+previous_error = numpy.abs(error_group2_1d_40_pressure1)
+rate_group2_1d_pressure1_40_80 = \
+    -numpy.log(current_error/previous_error) / \
+    numpy.log(current_abscissa/previous_abscissa)
+
+try:
+    assert(rate_group2_1d_pressure1_40_80 &gt; 0.7)
+except AssertionError:
+    print rate_group2_1d_pressure1_40_80
+    raise
+    </test>
+
+    <test name="rate_group2_1d_saturation2_40_80 &gt; 0.7" language="python">
+
+import numpy
+current_abscissa = float(abscissa_group2_1d_80_saturation2)
+current_error = numpy.abs(error_group2_1d_80_saturation2)
+previous_abscissa = float(abscissa_group2_1d_40_saturation2)
+previous_error = numpy.abs(error_group2_1d_40_saturation2)
+rate_group2_1d_saturation2_40_80 = \
+    -numpy.log(current_error/previous_error) / \
+    numpy.log(current_abscissa/previous_abscissa)
+
+try:
+    assert(rate_group2_1d_saturation2_40_80 &gt; 0.7)
+except AssertionError:
+    print rate_group2_1d_saturation2_40_80
+    raise
+    </test>
+
+    <test name="rate_group2_2d_pressure1_10_20 &gt; 0.7" language="python">
+
+import numpy
+current_abscissa = float(abscissa_group2_2d_20_pressure1)
+current_error = numpy.abs(error_group2_2d_20_pressure1)
+previous_abscissa = float(abscissa_group2_2d_10_pressure1)
+previous_error = numpy.abs(error_group2_2d_10_pressure1)
+rate_group2_2d_pressure1_10_20 = \
+    -numpy.log(current_error/previous_error) / \
+    numpy.log(current_abscissa/previous_abscissa)
+
+try:
+    assert(rate_group2_2d_pressure1_10_20 &gt; 0.7)
+except AssertionError:
+    print rate_group2_2d_pressure1_10_20
+    raise
+    </test>
+
+    <test name="rate_group2_2d_saturation2_10_20 &gt; 0.7" language="python">
+
+import numpy
+current_abscissa = float(abscissa_group2_2d_20_saturation2)
+current_error = numpy.abs(error_group2_2d_20_saturation2)
+previous_abscissa = float(abscissa_group2_2d_10_saturation2)
+previous_error = numpy.abs(error_group2_2d_10_saturation2)
+rate_group2_2d_saturation2_10_20 = \
+    -numpy.log(current_error/previous_error) / \
+    numpy.log(current_abscissa/previous_abscissa)
+
+try:
+    assert(rate_group2_2d_saturation2_10_20 &gt; 0.7)
+except AssertionError:
+    print rate_group2_2d_saturation2_10_20
+    raise
+    </test>
+
+    <test name="rate_group2_2d_pressure1_20_40 &gt; 0.7" language="python">
+
+import numpy
+current_abscissa = float(abscissa_group2_2d_40_pressure1)
+current_error = numpy.abs(error_group2_2d_40_pressure1)
+previous_abscissa = float(abscissa_group2_2d_20_pressure1)
+previous_error = numpy.abs(error_group2_2d_20_pressure1)
+rate_group2_2d_pressure1_20_40 = \
+    -numpy.log(current_error/previous_error) / \
+    numpy.log(current_abscissa/previous_abscissa)
+
+try:
+    assert(rate_group2_2d_pressure1_20_40 &gt; 0.7)
+except AssertionError:
+    print rate_group2_2d_pressure1_20_40
+    raise
+    </test>
+
+    <test name="rate_group2_2d_saturation2_20_40 &gt; 0.7" language="python">
+
+import numpy
+current_abscissa = float(abscissa_group2_2d_40_saturation2)
+current_error = numpy.abs(error_group2_2d_40_saturation2)
+previous_abscissa = float(abscissa_group2_2d_20_saturation2)
+previous_error = numpy.abs(error_group2_2d_20_saturation2)
+rate_group2_2d_saturation2_20_40 = \
+    -numpy.log(current_error/previous_error) / \
+    numpy.log(current_abscissa/previous_abscissa)
+
+try:
+    assert(rate_group2_2d_saturation2_20_40 &gt; 0.7)
+except AssertionError:
+    print rate_group2_2d_saturation2_20_40
+    raise
+    </test>
+
+    <test name="rate_group2_3d_pressure1_10_20 &gt; 0.7" language="python">
+
+import numpy
+current_abscissa = float(abscissa_group2_3d_20_pressure1)
+current_error = numpy.abs(error_group2_3d_20_pressure1)
+previous_abscissa = float(abscissa_group2_3d_10_pressure1)
+previous_error = numpy.abs(error_group2_3d_10_pressure1)
+rate_group2_3d_pressure1_10_20 = \
+    -numpy.log(current_error/previous_error) / \
+    numpy.log(current_abscissa/previous_abscissa)
+
+try:
+    assert(rate_group2_3d_pressure1_10_20 &gt; 0.7)
+except AssertionError:
+    print rate_group2_3d_pressure1_10_20
+    raise
+    </test>
+
+    <test name="rate_group2_3d_saturation2_10_20 &gt; 0.7" language="python">
+
+import numpy
+current_abscissa = float(abscissa_group2_3d_20_saturation2)
+current_error = numpy.abs(error_group2_3d_20_saturation2)
+previous_abscissa = float(abscissa_group2_3d_10_saturation2)
+previous_error = numpy.abs(error_group2_3d_10_saturation2)
+rate_group2_3d_saturation2_10_20 = \
+    -numpy.log(current_error/previous_error) / \
+    numpy.log(current_abscissa/previous_abscissa)
+
+try:
+    assert(rate_group2_3d_saturation2_10_20 &gt; 0.7)
+except AssertionError:
+    print rate_group2_3d_saturation2_10_20
+    raise
+    </test>
+
+  </pass_tests>
+  <warn_tests>
+  </warn_tests>
+</testproblem>

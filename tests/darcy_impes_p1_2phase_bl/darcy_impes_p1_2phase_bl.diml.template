@@ -5,7 +5,9 @@
       <integer_value rank="0">{{ opt.dim_number }}</integer_value>
     </dimension>
     <mesh name="CoordinateMesh">
-      <from_file file_name="{{ opt.mesh_prefix_relative_to_simulation }}/{{ opt.mesh_name }}">
+      <!-- assume that simulations take place in a directory parallel
+           to {{ opt.mesh_dir }}/ -->
+      <from_file file_name="../{{ opt.mesh_dir }}/{{ opt.mesh_name }}">
         <format name="gmsh"/>
         <stat>
           <include_in_stat/>
@@ -169,8 +171,8 @@
       <diagnostic>
         <mesh name="PressureMesh"/>
         <algorithm name="Internal"/>
-	<correlation name="{{ opt.relperm_relation }}">
-	  {% if 'Corey2Phase' not in opt.relperm_relation %}
+	<correlation name="{{ opt.relperm_relation_name }}">
+	  {% if opt.relperm_relation_exponents %}
           <exponents>
             <real_value shape="2" rank="1">{{ opt.relperm_relation_exponents|join(' ') }}</real_value>
           </exponents>
@@ -331,6 +333,43 @@
         <consistent_interpolation/>
       </diagnostic>
     </vector_field>
+    {% macro error_variables(this_phase) %}
+    {% for ef in opt.examined_fields %}
+    {% if ef.phase_name == this_phase %}
+    <scalar_field name="Interpolated{{ ef.variable_name }}ReferenceSolution">
+      <prescribed>
+        <mesh name="PressureMesh"/>
+        <value name="WholeMesh">
+          <python>
+            <string_value lines="20" type="code" language="python">def val(X, t):
+    import numpy
+    data = numpy.fromfile('../reference_solution/{{ opt.case }}_{{ ef.field }}.txt', sep='\t')
+    data = data.reshape((len(data)/2, 2))
+    return numpy.interp(X[0], data[:,0], data[:,1])</string_value>
+          </python>
+        </value>
+        <stat>
+          <include_cv_stats/>
+        </stat>
+        <do_not_recalculate/>
+      </prescribed>
+    </scalar_field>
+    <scalar_field name="{{ ef.variable_name }}AbsError">
+      <diagnostic>
+        <mesh name="PressureMesh"/>
+        <algorithm source_field_2_type="scalar" name="scalar_difference" source_field_1_name="{{ ef.variable_name }}" source_field_2_name="Interpolated{{ ef.variable_name }}ReferenceSolution" material_phase_support="single" source_field_1_type="scalar">
+          <absolute_difference/>
+        </algorithm>
+        <stat>
+          <include_cv_stats/>
+        </stat>
+        <consistent_interpolation/>
+      </diagnostic>
+    </scalar_field>
+    {% endif %}
+    {% endfor %}
+    {% endmacro %}
+    {{ error_variables('Phase1') }}
   </material_phase>
   <material_phase name="Phase2">
     <scalar_field name="Pressure" rank="0">
@@ -456,40 +495,7 @@
         <consistent_interpolation/>
       </diagnostic>
     </scalar_field>
-    {% macro error_variable(examined_field) %}<scalar_field name="InterpolatedReference{{ examined_field.variable_name }}Solution">
-      <prescribed>
-        <mesh name="PressureMesh"/>
-        <value name="WholeMesh">
-          <python>
-            <string_value lines="20" type="code" language="python">def val(X, t):
-    import numpy
-    data = numpy.fromfile('../{{ examined_field.reference_solution_filename }}', 
-                          sep='\t')
-    data = data.reshape((len(data)/2, 2))
-    return numpy.interp(X[0], data[:,0], data[:,1])</string_value>
-          </python>
-        </value>
-        <stat>
-          <include_cv_stats/>
-        </stat>
-        <do_not_recalculate/>
-      </prescribed>
-    </scalar_field>
-    <scalar_field name="{{ examined_field.variable_name }}AbsError">
-      <diagnostic>
-        <mesh name="PressureMesh"/>
-        <algorithm source_field_2_type="scalar" name="scalar_difference" source_field_1_name="{{ examined_field.variable_name }}" source_field_2_name="InterpolatedReference{{ examined_field.variable_name }}Solution" material_phase_support="single" source_field_1_type="scalar">
-          <absolute_difference/>
-        </algorithm>
-        <stat>
-          <include_cv_stats/>
-        </stat>
-        <consistent_interpolation/>
-      </diagnostic>
-    </scalar_field>{% endmacro %}
-    {% for ef in opt.examined_fields %}
-    {{ error_variable(ef) }}
-    {% endfor %}
+    {{ error_variables('Phase2') }}
   </material_phase>
   <porous_media>
     <scalar_field name="Porosity">
