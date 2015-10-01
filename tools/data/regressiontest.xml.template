@@ -20,7 +20,7 @@ cd $startdir
     
     {% for var in abscissa_variables %}
     <variable name="{{ var.label }}" language="python">
-      {{ var.label }} = {{ var.value }}
+{{ var.label }} = {{ var.value }}
     </variable>
     {% endfor %}
 
@@ -37,19 +37,6 @@ has this been defined in the options file?'''
     raise
     </variable>
     {% endfor %}
-    
-    {% for var in rate_variables %}
-    <variable name="{{ var.label }}" language="python">
-import numpy
-current_abscissa = float(abscissa_{{ var.key }})
-current_error = numpy.abs(error_{{ var.key }})
-previous_abscissa = float(abscissa_{{ var.key_prev }})
-previous_error = numpy.abs(error_{{ var.key_prev }})
-{{ var.label }} = \
-    {{ var.sign }}numpy.log(current_error/previous_error) / \
-    numpy.log(current_abscissa/previous_abscissa)
-    </variable>
-    {% endfor %}
   </variables>
   
   <pass_tests>
@@ -58,16 +45,40 @@ import os
 files = os.listdir('{{ simulation_dir }}')
 assert("matrixdump" not in files and "matrixdump.info" not in files)
     </test>
-    
-    {% for var in error_variables + rate_variables %}{% if var.threshold %}
-    <test name="{{ var.label }} &{{ var.rel_op }}; {{ var.threshold }}" language="python"> 
+
+    {% macro test_header(var) %}
+<test name="{{ var.label }} &{{ var.rel_op }}; {{ var.threshold }}" language="python">
+    {% endmacro %}
+    {% macro test_footer(var) %}
 try:
     assert({{ var.label }} &{{ var.rel_op }}; {{ var.threshold }})
 except AssertionError:
     print {{ var.label }}
     raise
-    </test> 
-    {% endif %}{% endfor %}
+    </test>
+    {% endmacro %}
+    
+    {% for var in error_variables %}
+    {% if var.threshold %}
+    {{ test_header(var) }}{{ test_footer(var) }}
+    {% endif %}
+    {% endfor %}
+
+    {% for var in rate_variables %}
+    {% if var.threshold %}
+    {{ test_header(var) }}
+import numpy
+current_abscissa = float(abscissa_{{ var.key }})
+current_error = numpy.abs(error_{{ var.key }})
+previous_abscissa = float(abscissa_{{ var.key_prev }})
+previous_error = numpy.abs(error_{{ var.key_prev }})
+{{ var.label }} = \
+    {{ var.sign }}numpy.log(current_error/previous_error) / \
+    numpy.log(current_abscissa/previous_abscissa)
+
+{{ test_footer(var) }}
+    {% endif %}
+    {% endfor %}
   </pass_tests>
   <warn_tests>
   </warn_tests>

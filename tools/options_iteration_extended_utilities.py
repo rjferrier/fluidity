@@ -24,8 +24,8 @@ except:
     HAVE_JINJA2 = False
 
 
-def join(words):
-    "Joins words with underscores."
+def join(*words):
+    "Helper function.  Joins nonblank words with underscores."
     return '_'.join([w for w in words if w])
 
 
@@ -189,14 +189,19 @@ class WriteXmlForConvergenceTests(SerialFunctor):
         
     def append_error_variable(self, options):
         label = 'error_' + options.get_string()
+        try:
+            rel_op = options.relational_operator
+        except AttributeError:
+            # default to 'error <' test
+            rel_op = 'lt'
         self.error_variables.append({
             'label': label,
             'simulation_name': options.simulation_name,
             'phase_name': options.phase_name,
-            'name': options.variable_name,
-            'calculation': options.error_calculation,
+            'name': options.error_variable_name,
+            'calculation': options.error_aggregation,
             'timestep_index': options.error_timestep_index,
-            'rel_op': 'lt',
+            'rel_op': rel_op,
             'threshold': options.max_error_norm })
         return '\nassigned ' + label
 
@@ -212,7 +217,7 @@ class WriteXmlForConvergenceTests(SerialFunctor):
             # abort if the previous one doesn't exist
             return None
         suf2 = options.get_string(only=[self.convergence_abscissa_key])
-        return 'rate_' + join([stem, suf1, suf2])
+        return 'rate_' + join(stem, suf1, suf2)
 
 
     def append_rate_variable(self, options):
@@ -220,13 +225,18 @@ class WriteXmlForConvergenceTests(SerialFunctor):
         if not label:
             # abort if rate cannot be calculated
             return ''
+        try:
+            rel_op = options.relational_operator
+        except AttributeError:
+            # default to 'rate >' test
+            rel_op = 'gt'
         self.rate_variables.append({
             'label': label,
             'key': options.get_string(),
             'key_prev': options.get_string(
                 relative={self.convergence_abscissa_key: -1}),
             'sign': '-' if self.with_respect_to_resolution else '',
-            'rel_op': 'gt',
+            'rel_op': rel_op,
             'threshold': options.min_convergence_rate })
         return '\nassigned ' + label
 
