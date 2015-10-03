@@ -1760,6 +1760,15 @@ Finite element discretisation may become unbounded so limiting is often necessar
             <ref name="darcy_impes_generic_scalar_field_src"/>
           </optional>
           <optional>
+            <ref name="darcy_impes_generic_scalar_field_src_grad"/>
+          </optional>
+	  <optional>
+	    <element name="do_not_dilute">
+	      <a:documentation>If this option is checked, the partial time differential on the LHS will be solved simply as d(scalar)/dt.  Otherwise, it will be solved as d(porosity*saturation*scalar)/dt.</a:documentation>
+	      <empty/>
+	    </element>
+	  </optional>
+          <optional>
             <ref name="darcy_MIM_generic_scalar_field_immobile_src"/>
           </optional>
           <optional>
@@ -1868,6 +1877,17 @@ Default value is 1.</a:documentation>
         <value>Source</value>
       </attribute>
       <ref name="darcy_impes_scalar_field_prescribed_or_python_diagnostic_multiple_mesh"/>
+    </element>
+  </define>
+  <define name="darcy_impes_generic_scalar_field_src_grad">
+    <element name="scalar_field">
+      <attribute name="rank">
+        <value>0</value>
+      </attribute>
+      <attribute name="name">
+        <value>SourceGradient</value>
+      </attribute>
+      <ref name="darcy_impes_scalar_field_prescribed_or_python_diagnostic_arbitrary_mesh"/>
     </element>
   </define>
   <define name="darcy_MIM_generic_scalar_field_immobile_src">

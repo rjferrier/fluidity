@@ -2405,13 +2405,21 @@ dot_product((grad_pressure_face_quad(:,ggi) - di%cached_face_value%den(ggi,vele,
       end if
       
       call addto(di%lhs, 1.0/di%dt)            
-      call scale(di%lhs, di%cv_mass_pressure_mesh_with_porosity)
-      call scale(di%lhs, di%sat_ADE)  ! *****27 July 2013 LCai***change the saturation into pointed one 
+      if (di%generic_prog_sfield(f)%dilute) then
+         call scale(di%lhs, di%cv_mass_pressure_mesh_with_porosity)
+         call scale(di%lhs, di%sat_ADE)  ! *****27 July 2013 LCai***change the saturation into pointed one 
+      else
+         call scale(di%lhs, di%cv_mass_pressure_mesh)
+      end if
+
       ! Add old_porosity*old_saturation*old_sfield/dt to rhs      
       call addto(di%rhs, 1.0/di%dt)
-    
-      call scale(di%rhs, di%cv_mass_pressure_mesh_with_old_porosity)
-      call scale(di%rhs, di%old_sat_ADE) ! *****27 July 2013 LCai***change the old saturation into pointed one
+      if (di%generic_prog_sfield(f)%dilute) then
+         call scale(di%rhs, di%cv_mass_pressure_mesh_with_old_porosity)
+         call scale(di%rhs, di%old_sat_ADE) ! *****27 July 2013 LCai***change the old saturation into pointed one
+      else
+         call scale(di%rhs, di%cv_mass_pressure_mesh)
+      end if
       call scale(di%rhs, di%generic_prog_sfield(f)%old_sfield)
       
       ! Add source to rhs   
@@ -2421,6 +2429,23 @@ dot_product((grad_pressure_face_quad(:,ggi) - di%cached_face_value%den(ggi,vele,
          
          call addto(di%rhs, di%cv_mass_pressure_mesh_with_source)
          
+         if (di%generic_prog_sfield(f)%have_src_grad) then
+            ! if source gradient (dsrc/dscalar) is present, apply the
+            ! linearisation: src_new = src_old + (dsrc/dscalar)*(scalar_new -
+            ! scalar_old).  (dsrc/dscalar)*scalar_new gets subtracted from the
+            ! LHS; everything else, i.e. src_old - (dsrc/dscalar)*scalar_old,
+            ! gets added to the RHS.  We have already added src_old at this
+            ! point.
+            ewrite(2,*) 'Subtracting (dsrc/d'//&
+                 trim(di%generic_prog_sfield(f)%sfield%name)//')*'//&
+                 trim(di%generic_prog_sfield(f)%sfield%name)//'_old from RHS'
+            call zero(di%work_array_of_size_pressure_mesh)
+            call addto(di%work_array_of_size_pressure_mesh, di%generic_prog_sfield(f)%old_sfield)
+            call scale(di%work_array_of_size_pressure_mesh, di%generic_prog_sfield(f)%sfield_src_grad)
+            call compute_cv_mass(di%positions, &
+                 di%cv_mass_pressure_mesh_with_source, di%work_array_of_size_pressure_mesh)
+            call addto(di%rhs, di%cv_mass_pressure_mesh_with_source, scale=-1.)
+         end if
       end if
 
       
@@ -2454,6 +2479,18 @@ dot_product((grad_pressure_face_quad(:,ggi) - di%cached_face_value%den(ggi,vele,
           
       ! Add diagonal lhs to matrix
       call addto_diag(di%matrix, di%lhs)
+
+      if (di%generic_prog_sfield(f)%have_src .and. &
+           di%generic_prog_sfield(f)%have_src_grad) then
+         ewrite(2,*) 'Subtracting (dsrc/d'//&
+              trim(di%generic_prog_sfield(f)%sfield%name)//')*'//&
+              trim(di%generic_prog_sfield(f)%sfield%name)//'_new from LHS'
+         call compute_cv_mass(di%positions, &
+              di%cv_mass_pressure_mesh_with_source, &
+              di%generic_prog_sfield(f)%sfield_src_grad)
+         call addto_diag(di%matrix, &
+              di%cv_mass_pressure_mesh_with_source, scale=-1.)
+      end if
       
       ! Add implicit low order advection and diffusion terms to matrix and rhs
       if (di%generic_prog_sfield(f)%have_adv .or. di%generic_prog_sfield(f)%have_diff) then

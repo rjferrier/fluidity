@@ -111,11 +111,14 @@ module darcy_impes_assemble_type
       type(scalar_field), pointer :: old_sfield
       type(scalar_field), pointer :: sfield_abs
       type(scalar_field), pointer :: sfield_src
+      type(scalar_field), pointer :: sfield_src_grad
       type(tensor_field), pointer :: sfield_diff
       logical :: have_diff
       logical :: have_abs
       logical :: have_src
+      logical :: have_src_grad
       logical :: have_adv
+      logical :: dilute
       type(darcy_impes_cv_options_type) :: sfield_cv_options
       !********LCai*************for MIM model
       type(prog_sfield_MIM_type) :: MIM
@@ -189,6 +192,7 @@ module darcy_impes_assemble_type
       type(scalar_field)     :: rhs_full
       type(scalar_field)     :: rhs_high_resolution
       type(scalar_field)     :: inverse_cv_mass_pressure_mesh
+      type(scalar_field)     :: cv_mass_pressure_mesh
       type(scalar_field)     :: cv_mass_pressure_mesh_with_source
       type(scalar_field)     :: cv_mass_pressure_mesh_with_porosity   
       type(scalar_field)     :: cv_mass_pressure_mesh_with_old_porosity 

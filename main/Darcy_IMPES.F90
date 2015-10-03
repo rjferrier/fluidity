@@ -785,6 +785,7 @@ contains
       call allocate(di%rhs, di%pressure_mesh)
       call allocate(di%rhs_full, di%pressure_mesh)
       call allocate(di%rhs_high_resolution, di%pressure_mesh)
+      call allocate(di%cv_mass_pressure_mesh, di%pressure_mesh)
       call allocate(di%cv_mass_pressure_mesh_with_source, di%pressure_mesh)
       call allocate(di%cv_mass_pressure_mesh_with_porosity, di%pressure_mesh)
       call allocate(di%cv_mass_pressure_mesh_with_old_porosity, di%pressure_mesh)
@@ -1022,9 +1023,24 @@ contains
                         nullify(di%generic_prog_sfield(f_count)%sfield_src)
 
                         di%generic_prog_sfield(f_count)%have_src = .false.
-
                      end if
 
+                     ! TODO nest this in the previous field somehow
+                     di%generic_prog_sfield(f_count)%sfield_src_grad => &
+                          extract_scalar_field(di%state(p), trim(&
+                          tmp_char_option)//'SourceGradient', stat = stat)
+                     if (stat == 0) then
+                        di%generic_prog_sfield(f_count)%have_src_grad = .true.
+                     else
+                        nullify(di%generic_prog_sfield(f_count)%sfield_src_grad)
+                        di%generic_prog_sfield(f_count)%have_src_grad = .false.
+                     end if
+
+                     di%generic_prog_sfield(f_count)%dilute = .not. &
+                          have_option('/material_phase['//int2str(p-1)//']/&
+                          &scalar_field['//int2str(f-1)//']/prognostic/&
+                          &do_not_dilute')
+                     
                      di%generic_prog_sfield(f_count)%sfield_cv_options = &
                      darcy_impes_get_cv_options(di%generic_prog_sfield(f_count)%sfield%option_path, &
                                                 di%generic_prog_sfield(f_count)%sfield%mesh%shape%numbering%family, &
@@ -1038,7 +1054,7 @@ contains
                                                                                                                                      
                   end if 
 
-               end if 
+               end if
 
             end do 
 
@@ -1735,6 +1751,7 @@ contains
       call deallocate(di%rhs)
       call deallocate(di%rhs_full)
       call deallocate(di%rhs_high_resolution)
+      call deallocate(di%cv_mass_pressure_mesh)     
       call deallocate(di%cv_mass_pressure_mesh_with_source)     
       call deallocate(di%cv_mass_pressure_mesh_with_porosity)
       call deallocate(di%cv_mass_pressure_mesh_with_old_porosity)
@@ -1795,6 +1812,8 @@ contains
             nullify(di%generic_prog_sfield(f)%sfield_diff)
             nullify(di%generic_prog_sfield(f)%sfield_abs)
             nullify(di%generic_prog_sfield(f)%sfield_src)
+            nullify(di%generic_prog_sfield(f)%sfield_src_grad)
+            
             di%generic_prog_sfield(f)%have_diff = .false.
             di%generic_prog_sfield(f)%have_abs  = .false.
             di%generic_prog_sfield(f)%have_src  = .false.
