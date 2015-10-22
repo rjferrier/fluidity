@@ -1,10 +1,8 @@
-import darcy_impes_options as base
-from options_iteration import OptionsArray, OptionsNode, freeze
+import darcy_impes_base as base
+import darcy_impes_runner as runner
+from opiter import OptionsArray, OptionsNode, Remove, missing_dependencies
 from copy import deepcopy
 
-
-#------------------------------------------------------------------------------
-# OPTIONS
 
 #------------------------------------------------------------------------------
 # fields to be iterated over in postprocessing
@@ -45,20 +43,6 @@ class withgrav_updip:
 cases = OptionsArray('case', [p1satdiag, withgrav_updip])
 
 
-#------------------------------------------------------------------------------
-# submodels
-
-class relpermupwind:
-    saturation_face_value = None
-    rel_perm_face_value = "FirstOrderUpwind"
-
-class modrelpermupwind:
-    saturation_face_value = "FiniteElement"
-    saturation_face_value_limiter = "Sweby"
-    rel_perm_face_value = "RelPermOverSatUpwind"
-
-submodels = OptionsArray('submodel', [relpermupwind, modrelpermupwind])
-
 
 #---------------------------------------------------------------------
 # common to all
@@ -69,11 +53,6 @@ class common(base.common):
     # don't really care about element numbers in y and z
     def element_numbers(self):
         return [self.mesh_res, 2, 2]
-
-    def simulation_name(self):
-        # easiest way to create a name is to use get_string with some
-        # appropriate keys
-        return self.get_string(['case', 'submodel', 'dim', 'mesh_res'])
     
     def gravity_direction(self):
         result = [0] * self.dim_number
@@ -93,7 +72,7 @@ class common(base.common):
 
     
 # make an anonymous root node to store the above options
-root = OptionsNode()
+root = OptionsNode(item_hooks=[Remove(missing_dependencies)])
 root.update(common)
 
 
@@ -112,29 +91,28 @@ base.dims['3d'] *= OptionsArray('mesh_res', [10, 20])
 # create meshing tree from the array of problem dimensions
 mesh_options_tree = root * base.dims
 
-# the simulation tree adds cases and submodels
-sim_options_tree = root * cases * submodels * base.dims
+# the simulation tree adds cases and face controls
+sim_options_tree = root * cases * base.face_controls * base.dims
 
 # with the testing tree, we're additionally interested in certain
 # fields for certain cases.
 test_options_tree = deepcopy(sim_options_tree)
 test_options_tree['p1satdiag'] *= examined_fields[0:2]
 test_options_tree['withgrav_updip'] *= examined_fields[1:2]
-    
+
 
 #------------------------------------------------------------------------------
 # DISPATCH
 
 if __name__ == '__main__':
-    base.main(mesh_options_tree,
-              sim_options_tree,
-              test_options_tree)
+    runner.main(mesh_options_tree,
+                sim_options_tree,
+                test_options_tree)
 
     
 # Notes:
 # 
 # [1] Each simulation needs to compute all of the fields in
-# examined_fields before we iterate over them at the
-# postprocessing stage.  A neat way of storing this information is
-# to convert examined_fields to a list of dictionaries, and freeze
-# them so we don't get pickling errors when multiprocessing.
+# examined_fields before we iterate over them at the postprocessing
+# stage.  One way of storing this information is to convert
+# examined_fields to a list of dictionaries.

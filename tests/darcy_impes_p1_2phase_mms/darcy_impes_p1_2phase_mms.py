@@ -1,17 +1,17 @@
-import darcy_impes_options as base
-from options_iteration import OptionsArray, OptionsNode, CallableEntry, freeze
+import darcy_impes_base as base
+from opiter import OptionsArray, OptionsNode, CallableOption,\
+    Remove, missing_dependencies, unpicklable
 from sympy import Symbol, Function, diff, integrate, sin, cos, pi, exp, sqrt
 from re import sub
 import os
 import errno
 import sys
+import copy
 
+#----------------------------------------------------------------------
+# helpers
 
-#------------------------------------------------------------------------------
-# HELPERS
-
-
-# these values are arbitrary, but see note 2
+# these values are arbitrary, but see note [1]
 pressure_scale = 1000.
 saturation_scale = 0.5
 
@@ -34,6 +34,7 @@ def mag(vector):
     except TypeError:
         # not a list/tuple - assume single component
         return abs(vector)
+
     
 def format_sympy(expression):
     """
@@ -63,47 +64,39 @@ def format_sympy(expression):
     return result
 
 
-#------------------------------------------------------------------------------
+#----------------------------------------------------------------------
 # OPTIONS 
 
-#------------------------------------------------------------------------------
-# fields to be iterated over in postprocessing
+#----------------------------------------------------------------------
+# boundary types
 
-class pressure1:
-    phase_name = 'Phase1'
-    variable_name = 'Pressure'
-    def error_tolerance(self):
-        return 0.1 * pressure_scale
-    # see note 3b
-    variable_solution = CallableEntry(lambda opt: opt.pressures[0])
-
-class saturation2:
-    phase_name = 'Phase2'
-    variable_name = 'Saturation'
-    def error_tolerance(self):
-        return 0.1 * saturation_scale
-    variable_solution = CallableEntry(lambda opt: opt.saturations[1])
-    
-examined_fields = OptionsArray('field', [pressure1, saturation2])
-
-
-#------------------------------------------------------------------------------
-# groups - simulation options can be lumped together; any one failure
-# will cause the whole group to fail to converge
-
-class group1:
-    # orthotopic geometry, normal flow BCs
-    geometry_prefix = ''
-    have_regular_mesh = False
+# straight boundaries can easily support normal flow BCs for MMS tests
+class straight(base.straight):
     def pressure1_dirichlet_boundary_ids(self):
         return (self.outlet_id,) + self.wall_ids
     saturation2_dirichlet_boundary_ids = ()
     def normal_velocity2_dirichlet_boundary_ids(self):
         return (self.inlet_id,) + self.wall_ids
 
-    # Brooks-Corey relation
-    relperm_relation_name = 'Corey2Phase'
-    relperm_relation_exponents = None
+    
+# curved boundaries are harder to work with, so marry them to
+# saturation Dirichlet BCs
+class curved(base.curved):
+    def pressure1_dirichlet_boundary_ids(self):
+        # TODO: figure out why we need pressure over all the
+        # boundaries for the curved geometry case
+        return (self.inlet_id, self.outlet_id,) + self.wall_ids
+    def saturation2_dirichlet_boundary_ids(self):
+        return (self.inlet_id,) + self.wall_ids
+    normal_velocity2_dirichlet_boundary_ids = ()
+    
+boundaries = OptionsArray('boundary', [straight, curved])
+    
+
+#----------------------------------------------------------------------
+# relperms
+
+class corey(base.corey):
     residual_saturations = (0.05, 0.1)
     def relperms(self):
         S = self.saturations
@@ -112,35 +105,8 @@ class group1:
         return ((S[0] - Sr[0])**4,
                 (1. - (S[0] - Sr[0])**2) * (1. - (S[0] - Sr[0]))**2)
     
-    def capillary_pressure_wrt_saturation(self):
-        S2 = Symbol('S2')
-        Sr2 = Symbol('Sr2')
-        return pressure_scale/10. * ((S2 - Sr2)/(1. - Sr2))**(-0.5)
-    
-    # misc.
-    saturation_face_value = "FiniteElement"
-    saturation_face_value_limiter = "Sweby"
-    rel_perm_face_value = "RelPermOverSatUpwind"
-
-    
-class group2:
-    # curved geometry, saturation Dirichlet BCs
-    def geometry_prefix(self):
-        return '' if self.dim_number == 1 else 'curved'
-    have_regular_mesh = False
-    def pressure1_dirichlet_boundary_ids(self):
-        # TODO: figure out why we need pressure over all the
-        # boundaries for the curved geometry case
-        return (self.inlet_id, self.outlet_id,) + self.wall_ids
-    def saturation2_dirichlet_boundary_ids(self):
-        return (self.inlet_id,) + self.wall_ids
-    normal_velocity2_dirichlet_boundary_ids = ()
-
-    # quadratic relperm
-    relperm_relation_name = 'PowerLaw'
-    relperm_relation_exponents = (2, 2)
+class quadratic(base.quadratic):
     residual_saturations = (0.2, 0.3)
-    
     def relperms(self):
         S = self.saturations
         Sr = self.residual_saturations
@@ -148,25 +114,80 @@ class group2:
         return ((S[0]-Sr[0])**n[0],
                 (S[1]-Sr[1])**n[1])
 
+rel_perms = OptionsArray('rel_perm', [quadratic, corey])
+
+
+#----------------------------------------------------------------------
+# capillarity
+
+class cap:
     capillary_pressure_wrt_saturation = 0
-    capillary_pressure = 0
 
-    # misc.
-    saturation_face_value = None
-    rel_perm_face_value = "FirstOrderUpwind"
+class nocap:
+    def capillary_pressure_wrt_saturation(self):
+        S2 = Symbol('S2')
+        Sr2 = Symbol('Sr2')
+        return pressure_scale/10. * ((S2 - Sr2)/(1. - Sr2))**(-0.5)
 
-groups = OptionsArray('group', [group1, group2])
+
+#----------------------------------------------------------------------
+# groups - simulation options can be lumped together; any one failure
+# will cause the whole group to fail to converge
+
+class group1(quadratic, nocap, base.rpupwind):
+    pass
+
+class group2(corey, cap, base.modrpupwind_satfe):
+    pass
 
 
-#------------------------------------------------------------------------------
-# common to all
+
+# group1 = OptionsNode('group1')
+# group1.update(curved_satbc)
+# group1.update(corey)
+# group1.update(cap)
+# group2.update(base.relpermupwind)
+
+# group2 = OptionsNode('group2')
+# group2.update(curved_satbc)
+# group2.update(quadratic)
+# group2.update(nocap)
+# group2.update(base.modrelpermupwind)
+
+# tk
+
+
+#----------------------------------------------------------------------
+# fields to be iterated over in postprocessing
+
+class pressure1:
+    phase_name = 'Phase1'
+    variable_name = 'Pressure'
+    def error_tolerance(self):
+        return 0.1 * pressure_scale
+    solution = CallableOption(
+        lambda pressures, saturations: pressures[0])
+
+class saturation2:
+    phase_name = 'Phase2'
+    variable_name = 'Saturation'
+    def error_tolerance(self):
+        return 0.1 * saturation_scale
+    solution = CallableOption(
+        lambda pressures, saturations: saturations[1])
+
+# we are defining this array now because it is going to be used twice:
+# (i) collapsed and embedded in the simulation options; (ii) for
+# building the testing tree
+examined_fields = OptionsArray('field', [pressure1, saturation2])
+
+
+#----------------------------------------------------------------------
 
 # extend the class of the same name in darcy_impes_options
-class common(base.common):
-
-    # MMS-RELATED
+class simulation(base.simulation):
     
-    gravity_magnitude = 1.                   # see note 2
+    gravity_magnitude = 1.                   # see note [1]
     absolute_permeability = 1.567346939e-9 
     porosity = 0.4
     
@@ -179,11 +200,13 @@ class common(base.common):
                 for k_rel in self.relperms]
 
     # space and time scales
-    domain_extents = (1.0, 1.2, 0.8)         # see note 1
     finish_time = 1.0
 
     def Xt_nondim(self):
-        "Symbols x,..,t, nondimensionalised by domain_extents and finish_time."
+        """
+        Symbols x,..,t, nondimensionalised by domain_extents and
+        finish_time.
+        """
         return [x/L for x, L in zip(
             spacetime, self.domain_extents + (self.finish_time,))]
 
@@ -295,43 +318,105 @@ class common(base.common):
         return sum(div(u) - q for u, q in \
                    zip(self.darcy_velocities, self.saturation_sources))
     
-    # ETC.
-    
-    reference_timestep_number = 20   # TODO: tighten this up
 
-    def dump_period(self):
-        return self.finish_time
+    # def dump_period(self):
+    #     return self.finish_time
     
-    def time_step(self):
-        "Maintains a constant Courant number"
-        scale_factor = float(self.reference_element_numbers[0]) / self.mesh_res
-        return scale_factor * self.finish_time / self.reference_timestep_number
+    # def time_step(self):
+    #     "Maintains a constant Courant number"
+    #     scale_factor = float(self.reference_element_numbers[0]) / \
+    #                    self.mesh_res
+    #     return scale_factor * self.finish_time / \
+    #         self.reference_timestep_number
     
-    def simulation_name(self):
-        # easiest way to create a name is to use get_string with some
-        # appropriate keys
-        return self.get_string(['group', 'dim', 'mesh_res'])
+    # def simulation_name(self):
+    #     # easiest way to create a name is to use get_string with some
+    #     # appropriate keys
+    #     return self.get_string(['group', 'dim', 'mesh_res'])
 
-    # see note 3a
-    examined_fields = freeze(examined_fields.collapse())
+    # see note [2]
+    examined_fields = examined_fields.collapse()
+
     
+class testing(base.testing):
     user_id = 'rferrier'
     test_length = 'short'   # TODO: change to medium?
-    min_convergence_rate = 0.7
+    reference_timestep_number = 20   # TODO: tighten this up
                 
 
-# make an anonymous root node to store the above options
-root = OptionsNode()
-root.update(common)
+    
+#----------------------------------------------------------------------
+# tree assembly
+
+# make a root node to store basic options
+root = OptionsNode(base.problem_name)
+# root.update(simulation_options)
+
+# Make arrays representing domain dimensions and mesh resolutions.
+# These will be used to form both mesh names and simulation names,
+# hence tag both accordingly.
+dims = OptionsArray('dim', [base.onedim, base.twodim, base.threedim],
+                    names=['1d', '2d', '3d'], tags=['mesh', 'sim'])
+resolutions = OptionsArray('mesh_res', [10, 20, 40, 80],
+                           tags=['mesh', 'sim'])
+
+def make_subtree(higher_dim_options):
+    """
+    Makes a fresh tree out of the 'dims' array, with mesh resolution
+    decreasing with dimension (for computational economy), and higher
+    dimensional options being inserted for 2D and 3D.
+    """
+    result = OptionsNode()      # initialise a fresh tree
+    result *= dims
+    result['1d'] *= resolutions[0:4]
+    result['2d'] *= higher_dim_options * resolutions[0:3]
+    result['3d'] *= higher_dim_options * resolutions[0:2]
+    return result
+
+# combine straight boundaries with regular mesh and curved boundaries
+# with irregular mesh
+boundaries = OptionsArray('boundary', [straight, curved],
+                          tags=['mesh'])
+mesh_types = OptionsArray('mesh_type', [base.reg, base.irreg],
+                          tags=['mesh'])
+higher_dim_options = boundaries + mesh_types
+
+# for the mesh tree, use all of higher_dim_options in a call to
+# make_subtree
+mesh_tree = make_subtree(higher_dim_options)
+
+# Marry simulation groups with mesh groups.  For this we need to split
+# higher_dim_options into separate subtrees
+groups = OptionsArray('group', [group1, group2], tags=['sim'])
+subtrees = [make_subtree(hdo) for hdo in higher_dim_options]
+sim_tree = groups + subtrees
 
     
-#------------------------------------------------------------------------------
-# TREE ASSEMBLY
+from opiter import pretty_print
+
+print '\nMesh'
+pretty_print(mesh_tree)
     
-# attach appropriate mesh resolutions to each dimension option
-base.dims['1d'] *= OptionsArray('mesh_res', [10, 20, 40, 80])
-base.dims['2d'] *= OptionsArray('mesh_res', [10, 20, 40])
-base.dims['3d'] *= OptionsArray('mesh_res', [10, 20])
+print '\nSimulation'
+pretty_print(sim_tree)
+
+print '\nmesh_tree gets mesh_name:'
+for od in mesh_tree.collapse():
+    print od.get_string('mesh')
+
+print '\nsim_tree gets mesh_name:'
+for od in sim_tree.collapse():
+    print od.get_string('mesh')
+
+print '\nsim_tree gets sim_name:'
+for od in sim_tree.collapse():
+    print od.get_string('sim')
+    
+import sys
+sys.exit()
+
+mesh_options_tree = OptionsNode(mesh_options) * \
+                    base.dims
 
 # Meshes depend on the whether the geometry is curved or straight,
 # which is an option found in groups.  Hence meshes and simulations
@@ -339,50 +424,34 @@ base.dims['3d'] *= OptionsArray('mesh_res', [10, 20])
 general_options_tree = root * groups * base.dims
 
 # TODO: In 3D, velocity boundary conditions lead to nonconvergence.
-# This is a simulator bug that needs to be fixed.  For now, remove
-# this part of the tree so that tests can pass.
+# This is a bug that needs to be fixed.  For now, remove this part of
+# the tree so that tests can pass.
 del general_options_tree['group1']['3d']
 
 # for postprocessing, we additionally want to iterate over some fields
 # of interest
 test_options_tree = general_options_tree * examined_fields
+test_options_tree.update(base.testing_options)
 
-
-#------------------------------------------------------------------------------
-# DISPATCH
+#----------------------------------------------------------------------
+# dispatch
 
 if __name__ == '__main__':
-    base.main(general_options_tree,
-              general_options_tree,
+    base.main(mesh_options_tree,
+              sim_options_tree,
               test_options_tree,
               jinja2_filters={'format_sympy': format_sympy})
     
 
 # Notes:
 # 
-# [1] Mesh elements will be sized such that there are mesh_res
-#     elements along domain edges in the x-direction.  Irregular
-#     meshes will try to fill the domain with uniformly sized
-#     elements.  This means that the domain probably needs to be sized
-#     'nicely' in each dimension if there is to be good convergence on
-#     these meshes.
-# 
-# [2] The pressure scale should be high enough to have an influence
+# [1] The pressure scale should be high enough to have an influence
 #     (~100).  High levels of saturation and rho*g_mag/mu have been
 #     found to cause numerical instability well below the expected CFL
 #     limit.  This may be caused by having a highly nonlinear relative
 #     permeability term and forcing an unnatural pressure field.
 #
-# [3] Each simulation needs to compute all of the fields in
+# [2] Each simulation needs to compute all of the fields in
 #     examined_fields before we iterate over them at the
-#     postprocessing stage.
-#
-#     [a] A neat way of storing this information is to convert
-#         examined_fields to a list of dictionaries, and freeze them
-#         so we don't get pickling errors when multiprocessing.
-#
-#     [b] Unfortunately, getting the analytical solution to each field
-#         means having access to the master tree - and examined fields
-#         does not have such access if they are embedded.  So make the
-#         analytical solution a function of the master tree, then the
-#         template can call it.
+#     postprocessing stage.  One way of storing this information is to
+#     convert examined_fields to a list of dictionaries.

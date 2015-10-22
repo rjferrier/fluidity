@@ -1,21 +1,16 @@
 # Python scripts will use Fluidity binaries associated with the present
-# directory unless specified otherwise.  When running tests which are
-# remote from the branch, the user will need to point FLUIDITYPATH back
-# to this branch.
+# directory unless specified otherwise
 export FLUIDITYPATH ?= $(CURDIR)/../../
 
 export DARCYCOMMONPATH := $(FLUIDITYPATH)/tests/darcy_impes_common
-
-# TODO options_iteration is currently assumed to exist in the home
-# directory; instead it should be installable and the dependence on
-# HOME should be removed.
-export PYTHONPATH := $(PYTHONPATH):$(DARCYCOMMONPATH):$(FLUIDITYPATH)/python:$(FLUIDITYPATH)/tools:$(HOME)
-
+# export PYTHONPATH := $(PYTHONPATH):$(DARCYCOMMONPATH):$(FLUIDITYPATH)/python:$(FLUIDITYPATH)/tools
+export PYTHONPATH := $(HOME)/opiter:$(PYTHONPATH):$(DARCYCOMMONPATH):$(FLUIDITYPATH)/python:$(FLUIDITYPATH)/tools
 
 export TEMPLATES = *.xml.template *.geo.template
 export MESHPATH = meshes
 export SIMPATH = simulations
 
+.phony: pre run post xml clean
 
 input: clean
 
@@ -43,5 +38,5 @@ regen: pre xml clean
 all: pre run post
 
 # delegate to the python script 
-%: $(TEMPLATES)
-	@python script.py $@
+pre run post xml: $(TEMPLATES)
+	python $(PROBLEM).py $@

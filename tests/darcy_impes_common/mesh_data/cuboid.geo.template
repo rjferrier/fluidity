@@ -1,13 +1,13 @@
-lx = {{ opt.domain_extents[0] }};
-ly = {{ opt.domain_extents[1] }};
-lz = {{ opt.domain_extents[2] }};
-nx = {{ opt.element_numbers[0] }};
-ny = {{ opt.element_numbers[1] }};
-nz = {{ opt.element_numbers[2] }};
+lx = {{ domain_extents[0] }};
+ly = {{ domain_extents[1] }};
+lz = {{ domain_extents[2] }};
+nx = {{ element_numbers[0] }};
+ny = {{ element_numbers[1] }};
+nz = {{ element_numbers[2] }};
 
 Point(1) = {0, 0, 0, lx/nx};
 
-{% if opt.have_regular_mesh %}
+{% if have_regular_mesh %}
 Extrude {lx, 0, 0} { Point{1}; Layers{nx}; }
 
 If ( !nz )

@@ -1,13 +1,19 @@
 <?xml version='1.0' encoding='utf-8'?>
 <darcy_impes_options>
+  <simulation_name>
+    <string_value lines="1">{{ simulation_name }}</string_value>
+    <comment>{% block intro %}Saturation sources have been computed using SymPy.  Velocity divergence minus saturation source should sum to zero over the phases:
+{{ divergence_check }}{% endblock %}
+</comment>
+  </simulation_name>
   <geometry>
     <dimension>
-      <integer_value rank="0">2</integer_value>
+      <integer_value rank="0">{{ dim_number }}</integer_value>
     </dimension>
     <mesh name="CoordinateMesh">
       <!-- assume that simulations take place in a directory parallel
-           to meshes/ -->
-      <from_file file_name="../meshes/rectangle_reg_10">
+           to {{ mesh_dir }}/ -->
+      <from_file file_name="../{{ mesh_dir }}/{{ mesh_name }}">
         <format name="gmsh"/>
         <stat>
           <include_in_stat/>
@@ -49,6 +55,27 @@
         </stat>
       </from_mesh>
     </mesh>
+    {% if saturation_sources|any %}
+    <mesh name="SaturationSourceMesh">
+      <from_mesh>
+        <mesh name="CoordinateMesh"/>
+        <mesh_shape>
+          <polynomial_degree>
+            <integer_value rank="0">1</integer_value>
+          </polynomial_degree>
+          <element_type>
+            <string_value>lagrangian</string_value>
+          </element_type>
+        </mesh_shape>
+        <mesh_continuity>
+          <string_value>continuous</string_value>
+        </mesh_continuity>
+        <stat>
+          <exclude_from_stat/>
+        </stat>
+      </from_mesh>
+    </mesh>
+    {% endif %}
     <quadrature>
       <degree>
         <integer_value rank="0">1</integer_value>
@@ -65,7 +92,7 @@
     </dump_format>
     <dump_period>
       <constant>
-        <real_value rank="0">0.3</real_value>
+        <real_value rank="0">{{ dump_period }}</real_value>
       </constant>
     </dump_period>
     <output_mesh name="PressureMesh"/>
@@ -78,26 +105,45 @@
       <real_value rank="0">0</real_value>
     </current_time>
     <timestep>
-      <real_value rank="0">1.0e-03</real_value>
+      <real_value rank="0">{{ time_step }}</real_value>
     </timestep>
     <finish_time>
-      <real_value rank="0">0.2</real_value>
+      <real_value rank="0">{{ finish_time }}</real_value>
     </finish_time>
+    {% if adaptive_timestepping %}
     <adaptive_timestep/>
+    {% endif %}
   </timestepping>
   <physical_parameters>
+  {% if gravity_magnitude %}
+    <gravity>
+      <magnitude>
+        <real_value rank="0">{{ gravity_magnitude }}</real_value>
+      </magnitude>
+      <vector_field name="GravityDirection" rank="1">
+        <prescribed>
+          <mesh name="ElementWiseMesh"/>
+          <value name="WholeMesh">
+            <constant>
+              <real_value shape="{{ dim_number }}" dim1="dim" rank="1">{{ gravity_direction|join(' ') }}</real_value>
+            </constant>
+          </value>
+        </prescribed>
+      </vector_field>
+    </gravity>
+  {% endif %}
   </physical_parameters>
   <material_phase name="Phase1">
     <scalar_field name="Pressure" rank="0">
       <prognostic>
         <mesh name="PressureMesh"/>
-        <solver name="DefaultSolverOptionsGMRESSOR">
+        <solver name="DefaultSolverOptionsGMRES{{ preconditioner|upper }}">
           <iterative_method name="gmres">
             <restart>
               <integer_value rank="0">30</integer_value>
             </restart>
           </iterative_method>
-          <preconditioner name="sor"/>
+          <preconditioner name="{{ preconditioner }}"/>
           <relative_error>
             <real_value rank="0">1.0e-10</real_value>
           </relative_error>
@@ -107,19 +153,25 @@
           <never_ignore_solver_failures/>
         </solver>
         <initial_condition name="WholeMesh">
-          <constant>
-            <real_value rank="0">0</real_value>
-          </constant>
+          <python>
+            <string_value lines="20" type="code" language="python">def val(X, t):
+  from numpy import sqrt, pi, cos, sin, exp
+  return {{ pressures[0]|format_sympy }}</string_value>
+          </python>
         </initial_condition>
-        <boundary_conditions name="right">
+        <boundary_conditions name="pressure1">
           <surface_ids>
-            <integer_value shape="1" rank="1">2</integer_value>
+            <integer_value shape="1" rank="1">{{ pressure1_dirichlet_boundary_ids|join(' ') }}</integer_value>
           </surface_ids>
           <type name="dirichlet">
             <apply_strongly/>
-            <constant>
-              <real_value rank="0">0</real_value>
-            </constant>
+	    {% block pressure1_bc %}
+	    <python>
+              <string_value lines="20" type="code" language="python">def val(X, t):
+  from numpy import sqrt, pi, cos, sin, exp
+  return {{ pressures[0]|format_sympy }}</string_value>
+  	    </python>
+	    {% endblock %}
           </type>
         </boundary_conditions>
         <stat>
@@ -132,6 +184,32 @@
       <diagnostic>
         <mesh name="PressureMesh"/>
         <algorithm name="Internal"/>
+	{% if saturation_face_value %}
+	<face_value name="{{ saturation_face_value }}">
+	  {% if saturation_face_value != 'FirstOrderUpwind' %}
+          <limit_face_value>
+            <limiter name="{{ saturation_face_value_limiter }}"/>
+          </limit_face_value>
+	  {% endif %}
+        </face_value>
+	{% endif %}
+	{% if saturation_sources[0] %}
+        <scalar_field name="Source" rank="0">
+          <prescribed>
+            <mesh name="SaturationSourceMesh"/>
+            <value name="WholeMesh">
+              <python>
+                <string_value type="code" lines="20" language="python">def val(X, t):
+  from numpy import sqrt, pi, cos, sin, exp
+  return {{ saturation_sources[0]|format_sympy }}</string_value>
+              </python>
+            </value>
+            <stat>
+              <include_cv_stats/>
+            </stat>
+          </prescribed>
+        </scalar_field>
+	{% endif %}
         <convergence>
           <include_in_convergence/>
         </convergence>
@@ -145,12 +223,19 @@
       <diagnostic>
         <mesh name="PressureMesh"/>
         <algorithm name="Internal"/>
-	<correlation name="PowerLaw">
+	<correlation name="{{ relperm_relation_name }}">
+	  {% if relperm_relation_exponents %}
           <exponents>
-            <real_value shape="2" rank="1">2 2</real_value>
+            <real_value shape="2" rank="1">{{ relperm_relation_exponents|join(' ') }}</real_value>
           </exponents>
+	  {% endif %}
+	  {% if residual_saturations %}
+          <residual_saturations>
+            <real_value shape="2" rank="1">{{ residual_saturations|join(' ') }}</real_value>
+          </residual_saturations>
+	  {% endif %}
         </correlation>
-        <face_value name="FirstOrderUpwind"/>
+        <face_value name="{{ rel_perm_face_value }}"/>
         <stat>
           <include_cv_stats/>
         </stat>
@@ -162,7 +247,7 @@
         <mesh name="ElementWiseMesh"/>
         <value name="WholeMesh">
           <constant>
-            <real_value rank="0">1.0e-04</real_value>
+            <real_value rank="0">{{ viscosities[0] }}</real_value>
           </constant>
         </value>
         <stat>
@@ -176,7 +261,7 @@
         <algorithm name="Internal"/>
         <equation_of_state name="IncompressibleLinear">
           <reference_density>
-            <real_value rank="0">1.0</real_value>
+            <real_value rank="0">{{ densities[0] }}</real_value>
           </reference_density>
         </equation_of_state>
         <face_value name="FirstOrderUpwind"/>
@@ -190,18 +275,27 @@
       <diagnostic>
         <mesh name="PressureMesh"/>
         <algorithm name="Internal"/>
-        <boundary_conditions name="left">
+	{% macro velocity_bcs(phase_num, normal_velocity_dirichlet_boundary_ids) %}
+	{% for boundary_id in normal_velocity_dirichlet_boundary_ids %}
+  	<boundary_conditions name="velocity{{ phase_num }}_boundary{{ boundary_id }}">
           <surface_ids>
-            <integer_value shape="1" rank="1">1</integer_value>
+            <integer_value shape="1" rank="1">{{ boundary_id }}</integer_value>
           </surface_ids>
+	  {% if boundary_normal_darcy_velocities[phase_num - 1][boundary_id - 1] == 0 %}
           <type name="no_normal_flow"/>
+	  {% else %}
+          <type name="prescribed_normal_flow">
+            <python>
+              <string_value type="code" lines="20" language="python">def val(X, t):
+  from numpy import sqrt, pi, cos, sin, exp
+  return {{ boundary_normal_darcy_velocities[phase_num - 1][boundary_id - 1]|format_sympy }}</string_value>
+            </python>
+          </type>
+	  {% endif %}
         </boundary_conditions>
-        <boundary_conditions name="wall_flow">
-          <surface_ids>
-            <integer_value shape="2" rank="1">3 4</integer_value>
-          </surface_ids>
-          <type name="no_normal_flow"/>
-        </boundary_conditions>
+	{% endfor %}
+	{% endmacro %}
+	{{ velocity_bcs(1, normal_velocity1_dirichlet_boundary_ids) }}
         <stat>
           <include_cv_stats/>
         </stat>
@@ -298,7 +392,40 @@
         <consistent_interpolation/>
       </diagnostic>
     </vector_field>
-    
+    {% macro error_variables(this_phase) %}
+    {% for ef in examined_fields %}
+    {% if ef.phase_name == this_phase %}
+    <scalar_field name="Analytical{{ ef.variable_name }}Solution">
+      <prescribed>
+        <mesh name="PressureMesh"/>
+        <value name="WholeMesh">
+          <python>
+            <string_value lines="20" type="code" language="python">def val(X, t):
+  from numpy import sqrt, pi, cos, sin, exp
+  return {{ ef.variable_solution(opt)|format_sympy }}</string_value>
+          </python>
+        </value>
+        <stat>
+          <include_cv_stats/>
+        </stat>
+      </prescribed>
+    </scalar_field>
+    <scalar_field name="{{ ef.variable_name }}AbsError">
+      <diagnostic>
+        <mesh name="{% if ef.variable_name == 'Pressure' %}PressureMesh{% else %}CoordinateMesh{% endif %}"/>
+        <algorithm source_field_2_type="scalar" name="scalar_difference" source_field_1_name="{{ ef.variable_name }}" source_field_2_name="Analytical{{ ef.variable_name }}Solution" material_phase_support="single" source_field_1_type="scalar">
+          <absolute_difference/>
+        </algorithm>
+        <stat>
+          <include_cv_stats/>
+        </stat>
+        <consistent_interpolation/>
+      </diagnostic>
+    </scalar_field>
+    {% endif %}
+    {% endfor %}
+    {% endmacro %}
+    {{ error_variables('Phase1') }}
   </material_phase>
   <material_phase name="Phase2">
     <scalar_field name="Pressure" rank="0">
@@ -311,14 +438,68 @@
         <consistent_interpolation/>
       </diagnostic>
     </scalar_field>
+    {% if capillary_pressure_wrt_saturation %}
+    <scalar_field name="CapilliaryPressure" rank="0">
+      <diagnostic>
+        <mesh name="PressureMesh"/>
+        <algorithm name="scalar_python_diagnostic" material_phase_support="single">
+          <string_value type="code" lines="20" language="python">
+S2_field = state.scalar_fields["Saturation"]
+Sr2 = {{ residual_saturations[1] }}
+for n in range(field.node_count):
+   S2 = S2_field.node_val(n)
+   pc = {{ capillary_pressure_wrt_saturation|format_sympy }}
+   # a minus sign is needed because pressure2 appears to be computed
+   # in the source code as pressure1 + capillary_pressure
+   field.set(n, -pc)</string_value>
+        </algorithm>
+        <stat>
+          <include_cv_stats/>
+        </stat>
+        <consistent_interpolation/>
+      </diagnostic>
+    </scalar_field>
+    {% endif %}
     <scalar_field name="Saturation" rank="0">
       <prognostic>
         <mesh name="PressureMesh"/>
         <initial_condition name="WholeMesh">
-          <constant>
-            <real_value rank="0">0.0</real_value>
-          </constant>
+          <python>
+            <string_value lines="20" type="code" language="python">def val(X, t):
+  from numpy import sqrt, pi, cos, sin, exp
+  return {{ saturations[1]|format_sympy }}</string_value>
+          </python>
         </initial_condition>
+	{% if saturation2_dirichlet_boundary_ids %}
+        <boundary_conditions name="saturation2">
+          <surface_ids>
+            <integer_value shape="1" rank="1">{{ saturation2_dirichlet_boundary_ids|join(' ') }}</integer_value>
+          </surface_ids>
+          <type name="dirichlet">
+            <apply_strongly/>
+  	    <python>
+              <string_value lines="20" type="code" language="python">def val(X, t):
+  from numpy import sqrt, pi, cos, sin, exp
+  return {{ saturations[1]|format_sympy }}</string_value>
+  	    </python>
+          </type>
+        </boundary_conditions>
+	{% endif %}
+        <scalar_field name="Source" rank="0">
+          <prescribed>
+            <mesh name="SaturationSourceMesh"/>
+            <value name="WholeMesh">
+              <python>
+                <string_value lines="20" type="code" language="python">def val(X, t):
+  from numpy import sqrt, pi, cos, sin, exp
+  return {{ saturation_sources[1]|format_sympy }}</string_value>
+              </python>
+            </value>
+            <stat>
+              <include_cv_stats/>
+            </stat>
+          </prescribed>
+        </scalar_field>
         <convergence>
           <include_in_convergence/>
         </convergence>
@@ -343,7 +524,7 @@
         <mesh name="ElementWiseMesh"/>
         <value name="WholeMesh">
           <constant>
-            <real_value rank="0">1.0e-04</real_value>
+            <real_value rank="0">{{ viscosities[1] }}</real_value>
           </constant>
         </value>
         <stat>
@@ -357,7 +538,7 @@
         <algorithm name="Internal"/>
         <equation_of_state name="IncompressibleLinear">
           <reference_density>
-            <real_value rank="0">1.0</real_value>
+            <real_value rank="0">{{ densities[1] }}</real_value>
           </reference_density>
         </equation_of_state>
         <stat>
@@ -370,22 +551,7 @@
       <diagnostic>
         <mesh name="PressureMesh"/>
         <algorithm name="Internal"/>
-        <boundary_conditions name="left">
-          <surface_ids>
-            <integer_value shape="1" rank="1">1</integer_value>
-          </surface_ids>
-          <type name="prescribed_normal_flow">
-            <constant>
-              <real_value rank="0">-1.0</real_value>
-            </constant>
-          </type>
-        </boundary_conditions>
-        <boundary_conditions name="wall_flow">
-          <surface_ids>
-            <integer_value shape="2" rank="1">3 4</integer_value>
-          </surface_ids>
-          <type name="no_normal_flow"/>
-        </boundary_conditions>
+	{{ velocity_bcs(2, normal_velocity2_dirichlet_boundary_ids) }}
         <stat>
           <include_cv_stats/>
         </stat>
@@ -422,67 +588,7 @@
         <consistent_interpolation/>
       </diagnostic>
     </scalar_field>
-        <scalar_field name="InterpolatedPressureReferenceSolution">
-      <prescribed>
-        <mesh name="PressureMesh"/>
-        <value name="WholeMesh">
-          <python>
-            <string_value lines="20" type="code" language="python">def val(X, t):
-    import numpy
-    data = numpy.fromfile('../reference_solution/p1satdiag_pressure2.txt', sep='\t')
-    data = data.reshape((len(data)/2, 2))
-    return numpy.interp(X[0], data[:,0], data[:,1])</string_value>
-          </python>
-        </value>
-        <stat>
-          <include_cv_stats/>
-        </stat>
-        <do_not_recalculate/>
-      </prescribed>
-    </scalar_field>
-    <scalar_field name="PressureAbsError">
-      <diagnostic>
-        <mesh name="PressureMesh"/>
-        <algorithm source_field_2_type="scalar" name="scalar_difference" source_field_1_name="Pressure" source_field_2_name="InterpolatedPressureReferenceSolution" material_phase_support="single" source_field_1_type="scalar">
-          <absolute_difference/>
-        </algorithm>
-        <stat>
-          <include_cv_stats/>
-        </stat>
-        <consistent_interpolation/>
-      </diagnostic>
-    </scalar_field>
-    <scalar_field name="InterpolatedSaturationReferenceSolution">
-      <prescribed>
-        <mesh name="PressureMesh"/>
-        <value name="WholeMesh">
-          <python>
-            <string_value lines="20" type="code" language="python">def val(X, t):
-    import numpy
-    data = numpy.fromfile('../reference_solution/p1satdiag_saturation2.txt', sep='\t')
-    data = data.reshape((len(data)/2, 2))
-    return numpy.interp(X[0], data[:,0], data[:,1])</string_value>
-          </python>
-        </value>
-        <stat>
-          <include_cv_stats/>
-        </stat>
-        <do_not_recalculate/>
-      </prescribed>
-    </scalar_field>
-    <scalar_field name="SaturationAbsError">
-      <diagnostic>
-        <mesh name="PressureMesh"/>
-        <algorithm source_field_2_type="scalar" name="scalar_difference" source_field_1_name="Saturation" source_field_2_name="InterpolatedSaturationReferenceSolution" material_phase_support="single" source_field_1_type="scalar">
-          <absolute_difference/>
-        </algorithm>
-        <stat>
-          <include_cv_stats/>
-        </stat>
-        <consistent_interpolation/>
-      </diagnostic>
-    </scalar_field>
-
+    {{ error_variables('Phase2') }}
   </material_phase>
   <porous_media>
     <scalar_field name="Porosity">
@@ -490,7 +596,7 @@
         <mesh name="ElementWiseMesh"/>
         <value name="WholeMesh">
           <constant>
-            <real_value rank="0">0.5</real_value>
+            <real_value rank="0">{{ porosity }}</real_value>
           </constant>
         </value>
         <stat>
@@ -503,7 +609,7 @@
         <mesh name="ElementWiseMesh"/>
         <value name="WholeMesh">
           <constant>
-            <real_value rank="0">1.0e-10</real_value>
+            <real_value rank="0">{{ absolute_permeability }}</real_value>
           </constant>
         </value>
         <stat>

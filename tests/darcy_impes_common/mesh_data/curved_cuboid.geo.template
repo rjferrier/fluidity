@@ -1,8 +1,8 @@
-{% if opt.have_regular_mesh %}{% raise "this geometry is not set up to have a regular mesh" %}{% endif %}
-lx = {{ opt.domain_extents[0] }};
-ly = {{ opt.domain_extents[1] }};
-lz = {{ opt.domain_extents[2] }};
-dx = {{ opt.element_sizes[0] }};
+{% if have_regular_mesh %}{% raise "this geometry is not set up to have a regular mesh" %}{% endif %}
+lx = {{ domain_extents[0] }};
+ly = {{ domain_extents[1] }};
+lz = {{ domain_extents[2] }};
+dx = {{ element_sizes[0] }};
 sqrt2 = 1.4142135623730951;
 
 Point(1) = {  0,  0,  0, dx};

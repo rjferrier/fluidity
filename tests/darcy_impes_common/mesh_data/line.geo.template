@@ -1,5 +1,5 @@
-lx = {{ opt.domain_extents[0] }};
-nx = {{ opt.element_numbers[0] }};
+lx = {{ domain_extents[0] }};
+nx = {{ element_numbers[0] }};
 
 // for some reason mesh adaptivity complains 
 // if extrusion isn't done in reverse
