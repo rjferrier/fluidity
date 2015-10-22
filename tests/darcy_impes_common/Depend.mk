@@ -6,7 +6,7 @@ export DARCYCOMMONPATH := $(FLUIDITYPATH)/tests/darcy_impes_common
 # export PYTHONPATH := $(PYTHONPATH):$(DARCYCOMMONPATH):$(FLUIDITYPATH)/python:$(FLUIDITYPATH)/tools
 export PYTHONPATH := $(HOME)/opiter:$(PYTHONPATH):$(DARCYCOMMONPATH):$(FLUIDITYPATH)/python:$(FLUIDITYPATH)/tools
 
-export TEMPLATES = *.xml.template *.geo.template
+export TEMPLATES = darcy_impes_base.diml.template *.geo.template *.xml.template
 export MESHPATH = meshes
 export SIMPATH = simulations
 
@@ -25,11 +25,14 @@ clean:
 	rm -f *.pyc
 	rm -f *~
 
-%.xml.template:
-	cp $(FLUIDITYPATH)/tools/data/$@ .
+%.diml.template:
+	cp $(DARCYCOMMONPATH)/$@ .
 
 %.geo.template:
 	cp $(DARCYCOMMONPATH)/mesh_data/$@ .
+
+%.xml.template:
+	cp $(FLUIDITYPATH)/tools/data/$@ .
 
 # regenerate everything needed by the Fluidity testing framework
 regen: pre xml clean

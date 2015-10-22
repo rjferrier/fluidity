@@ -55,7 +55,7 @@
         </stat>
       </from_mesh>
     </mesh>
-    {% if saturation_sources|any %}
+    {% if saturation_sources %}
     <mesh name="SaturationSourceMesh">
       <from_mesh>
         <mesh name="CoordinateMesh"/>
@@ -223,10 +223,10 @@
       <diagnostic>
         <mesh name="PressureMesh"/>
         <algorithm name="Internal"/>
-	<correlation name="{{ relperm_relation_name }}">
-	  {% if relperm_relation_exponents %}
+	<correlation name="{{ rel_perm_relation_name }}">
+	  {% if rel_perm_relation_exponents %}
           <exponents>
-            <real_value shape="2" rank="1">{{ relperm_relation_exponents|join(' ') }}</real_value>
+            <real_value shape="2" rank="1">{{ rel_perm_relation_exponents|join(' ') }}</real_value>
           </exponents>
 	  {% endif %}
 	  {% if residual_saturations %}
@@ -402,7 +402,7 @@
           <python>
             <string_value lines="20" type="code" language="python">def val(X, t):
   from numpy import sqrt, pi, cos, sin, exp
-  return {{ ef.variable_solution(opt)|format_sympy }}</string_value>
+  return {{ ef.choose_solution(pressures, saturations)|format_sympy }}</string_value>
           </python>
         </value>
         <stat>

@@ -1,9 +1,15 @@
-{% extends "diml.template" %}
+{% extends "darcy_impes_base.diml.template" %}
 
 {% block intro_comment_block %}
 <comment>Saturation sources have been computed using SymPy.  Velocity divergence minus saturation source should sum to zero over the phases:
 {{ divergence_check }}
 </comment>
+<!-- p1: {{pressures[0]|format_sympy}} -->
+<!-- p2: {{pressures[1]|format_sympy}} -->
+<!-- S1: {{saturations[0]|format_sympy}} -->
+<!-- S2: {{saturations[1]|format_sympy}} -->
+<!-- QS1: {{saturation_sources[0]|format_sympy}} -->
+<!-- QS2: {{saturation_sources[1]|format_sympy}} -->
 {% endblock %}
 
 {% block other_mesh_blocks %}
