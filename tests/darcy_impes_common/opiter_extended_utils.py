@@ -12,8 +12,8 @@ Example:
 Note that WriteXML needs the Jinja 2 template engine.
 """
 
-from opiter.utilities import SerialFunctor, Failure, Success, \
-    check_file_exists
+from options_iteration.utilities import SerialFunctor, Failure, Success, \
+    check_file_exists, Jinja2TemplateEngine
 from fluidity_tools import stat_parser
 from numpy import abs, log, nan
 
@@ -24,24 +24,24 @@ except:
     HAVE_JINJA2 = False
 
 
-def join(words):
-    "Joins words with underscores."
-    return '_'.join(([w for w in words if w]))
+def join(*words):
+    "Helper function.  Joins nonblank words with underscores."
+    return '_'.join([w for w in words if w])
 
 
-def get_error_from_field(options, results_dir='.'):
+def get_error_from_field(options, simulation_dir='.'):
     stat_filename = '{}/{}.stat'.format(
-        results_dir, options.simulation_name)
+        simulation_dir, options.simulation_name)
     check_file_exists(stat_filename)
     stat = stat_parser(stat_filename)
     
     phase = options.phase_name
-    var = options.variable_name
-    calc_type = options.error_aggregation
+    var = options.error_variable_name
+    agg = options.error_aggregation
     index = options.error_timestep_index
     try:
         # n.b. assume the last timestep is required
-        return stat[phase][var][calc_type][index]
+        return stat[phase][var][agg][index]
     except KeyError:
         raise Failure(
             ("\nget_error_from_field expected to find \n"+\
@@ -56,12 +56,12 @@ class StudyConvergence(SerialFunctor):
 
     def __init__(self, abscissa_key, report_filename=None, 
                  error_getter=get_error_from_field,
-                 results_dir='.', report_dir='.',
+                 simulation_dir='.', report_dir='.',
                  with_respect_to_resolution=False):
         self.abscissa_key = abscissa_key
         self.report_filename = report_filename
         self.error_getter = error_getter
-        self.results_dir = results_dir
+        self.simulation_dir = simulation_dir
         self.report_dir = report_dir
         self.with_respect_to_resolution = with_respect_to_resolution
         
@@ -82,13 +82,13 @@ class StudyConvergence(SerialFunctor):
             self.report_file.close()
         
     def __call__(self, options):
-        current_id = options.get_string(only=['sim'])
+        current_id = options.get_string()
         
         # n.b. need to convert from integer to float
         current_abs = float(options[self.abscissa_key])
         try:
             current_err = abs(
-                self.error_getter(options, self.results_dir))
+                self.error_getter(options, self.simulation_dir))
         except Failure as state:
             return self.print_end(state, options)
         
@@ -100,8 +100,7 @@ class StudyConvergence(SerialFunctor):
         # now try loading the values corresponding to the previous
         # mesh resolution and calculate the convergence rate
         try:
-            previous_id = options.get_string(
-                only=['sim'], relative={self.abscissa_key: -1})
+            previous_id = options.get_string(relative={self.abscissa_key: -1})
             
             previous_abs = self.abscissae[previous_id]
             previous_err = self.errors[previous_id]
@@ -125,35 +124,20 @@ class StudyConvergence(SerialFunctor):
             
         self.print_end(Success(msg), options)
 
-
-
-def render_error_from_field(options, var_name, results_dir='.'):
-    return """
-from fluidity_tools import stat_parser
-stat = stat_parser('{0}/{1}.stat')
-try:
-    {2} = stat['{3}']['{4}']['{5}'][{6}]
-except KeyError:
-    print '''
-Expected to find {3}::{4} in the stat file; 
-has this been defined in the options file?'''
-    raise""".format(results_dir, options.simulation_name, var_name,
-           options.error_phase_name, options.error_variable_name,
-           options.error_calculation, options.error_timestep_index)
-
-
-
+        
 class WriteXmlForConvergenceTests(SerialFunctor):
-    def __init__(self, convergence_abscissa_key, 
-                 error_renderer=render_error_from_field,
-                 template_dir='.', mesh_dir='.', simulation_dir='.',
+    def __init__(self, convergence_abscissa_key,
+                 template_filename='regressiontest.xml.template',
+                 target_filename=None,
+                 template_dir='.', simulation_dir='.',
                  with_respect_to_resolution=False):
         if not HAVE_JINJA2:
             raise Exception('jinja2 not installed; needed by this functor')
         self.convergence_abscissa_key = convergence_abscissa_key
-        self.error_renderer = error_renderer
         self.template_dir = template_dir
-        self.mesh_dir = mesh_dir
+        self.template_filename = template_filename
+        # target_filename will be defaulted later
+        self.target_filename = target_filename
         self.simulation_dir = simulation_dir
         self.with_respect_to_resolution = with_respect_to_resolution
 
@@ -161,14 +145,15 @@ class WriteXmlForConvergenceTests(SerialFunctor):
     def preamble(self, options):
         # the following lists will accumulate items as we loop over
         # the tree
-        self.mesh_commands = []
-        self.simulation_commands = []
-        self.variables = []
+        self.simulations = []
+        self.abscissa_variables = []
+        self.error_variables = []
+        self.rate_variables = []
 
-        # the leaves of the options tree will overlap in meshing and
-        # simulation commands.  There are different ways of dealing
-        # with this, but the simplest is perhaps to keep a register to
-        # avoid duplicating commands.
+        # the leaves of the options tree will overlap in simulation
+        # commands.  There are different ways of dealing with this,
+        # but the simplest is perhaps to keep a register to avoid
+        # duplicating commands.
         self.register = []
 
 
@@ -180,91 +165,76 @@ class WriteXmlForConvergenceTests(SerialFunctor):
         """
         msg = ''
 
-        if options.mesh_name not in self.register:
-            self.mesh_commands.append(
-                ' '.join(options.meshing_args))
-            self.register.append(options.mesh_name)
-        msg += '\n' + options.mesh_name
-
         if options.simulation_name not in self.register:
-            self.simulation_commands.append(
-                'echo "Running {}"'.format(options.simulation_name))
-            self.simulation_commands.append(
-                ' '.join(options.simulation_args))
+            self.simulations.append({
+                'name': options.simulation_name,
+                'args': options.simulation_args, })
             self.register.append(options.simulation_name)
-        msg += '\n' + options.simulation_name
+            msg += '\nincluded ' + options.simulation_name
 
         return msg
 
         
     def append_abscissa_variable(self, options):
-        name = 'abscissa_' + options.str()
-        self.variables.append({
-            'name': name,
-            'code': '\n{} = {}'.format(
-                name, options[self.convergence_abscissa_key]),
-            'test_code': '',
-            'metric_type': 'abscissa',
-            'rel_op': None,
-            'threshold': None })
-        return '\n' + self.variables[-1]['name']
+        label = 'abscissa_' + options.get_string()
+        self.abscissa_variables.append({
+            'label': label,
+            'value': options[self.convergence_abscissa_key] })
+        return '\nassigned ' + label
 
         
     def append_error_variable(self, options):
-        name = 'error_' + options.str()
-        self.variables.append({
-            'name': name,
-            'code': self.error_renderer(options, name, self.simulation_dir),
-            'test_code': '',
-            'metric_type': 'error',
-            'rel_op': 'lt',
-            'threshold': options.max_error_norm })
-        return '\n' + self.variables[-1]['name']
-
-
-    def get_rate_name(self, options):
-        stem = options.str(exclude=[self.convergence_abscissa_key])
-        # use the previous and current abscissae to form suffices for
-        # the name
+        label = 'error_' + options.get_string()
         try:
-            suf1 = options.str(only=[self.convergence_abscissa_key],
-                               relative={self.convergence_abscissa_key: -1})
+            rel_op = options.relational_operator
+        except AttributeError:
+            # default to 'error <' test
+            rel_op = 'lt'
+        self.error_variables.append({
+            'label': label,
+            'simulation_name': options.simulation_name,
+            'phase_name': options.phase_name,
+            'name': options.error_variable_name,
+            'calculation': options.error_aggregation,
+            'timestep_index': options.error_timestep_index,
+            'rel_op': rel_op,
+            'threshold': options.max_error_norm })
+        return '\nassigned ' + label
+
+
+    def get_rate_label(self, options):
+        stem = options.get_string(exclude=[self.convergence_abscissa_key])
+        # use the previous and current abscissae to form suffices for
+        # the label
+        try:
+            suf1 = options.get_string(only=[self.convergence_abscissa_key],
+            relative={self.convergence_abscissa_key: -1})
         except IndexError:
             # abort if the previous one doesn't exist
             return None
-        suf2 = options.str(only=[self.convergence_abscissa_key])
-        return 'rate_' + '_'.join(([s for s in [stem, suf1, suf2] if s]))
+        suf2 = options.get_string(only=[self.convergence_abscissa_key])
+        return 'rate_' + join(stem, suf1, suf2)
 
 
     def append_rate_variable(self, options):
-        name = self.get_rate_name(options)
-        if not name:
+        label = self.get_rate_label(options)
+        if not label:
             # abort if rate cannot be calculated
             return ''
-        self.variables.append({
-            'name': name,
-            'code': '',
-            'test_code': self.render_rate(options, name),
-            'metric_type': 'rate',
-            'rel_op': 'gt',
+        try:
+            rel_op = options.relational_operator
+        except AttributeError:
+            # default to 'rate >' test
+            rel_op = 'gt'
+        self.rate_variables.append({
+            'label': label,
+            'key': options.get_string(),
+            'key_prev': options.get_string(
+                relative={self.convergence_abscissa_key: -1}),
+            'sign': '-' if self.with_respect_to_resolution else '',
+            'rel_op': rel_op,
             'threshold': options.min_convergence_rate })
-        return '\n' + self.variables[-1]['name']
-
-
-    def render_rate(self, options, rate_name):
-        key = options.str()
-        key_prev = options.str(relative={self.convergence_abscissa_key: -1})
-        sign = '-' if self.with_respect_to_resolution else ''
-        return """
-import numpy
-current_abscissa = float(abscissa_{0})
-current_error = numpy.abs(error_{0})
-previous_abscissa = float(abscissa_{1})
-previous_error = numpy.abs(error_{1})
-{3} = \\
-    {2}numpy.log(current_error/previous_error) / \\
-    numpy.log(current_abscissa/previous_abscissa)""".format(
-        key, key_prev, sign, rate_name)
+        return '\nassigned ' + label
 
 
     def __call__(self, options):
@@ -277,19 +247,37 @@ previous_error = numpy.abs(error_{1})
 
             
     def postamble(self, options):
-        # fire up the template engine 
-        env = Environment(
-            loader=FileSystemLoader('.'))
-        template = env.get_template('{}/{}'.format(
-            self.template_dir, options.xml_template_filename))
+        jr = Jinja2()
+        if self.target_filename:
+            target_filename = self.target_filename
+        else:
+            target_filename = options.problem_name + '.xml'
+        jr.render(self.template_filename, target_filename,
+                  self.template_dir, '.', problem=options,
+                  simulation_dir=self.simulation_dir,
+                  simulations=self.simulations,
+                  abscissa_variables=self.abscissa_variables,
+                  error_variables=self.error_variables,
+                  rate_variables=self.rate_variables)
+        
 
-        # pass it the final options dict, which will include general
-        # information, and the lists we've been building up
-        with open(options.xml_target_filename, 'w') as f:
-            f.write(template.render(
-                problem=options,
-                mesh_dir = self.mesh_dir,
-                simulation_dir = self.simulation_dir,
-                mesh_commands=self.mesh_commands,
-                simulation_commands=self.simulation_commands,
-                variables=self.variables))
+class WriteRulesForMeshing(SerialFunctor):
+    def __init__(self, target_filename='Meshing.mk', mesh_dir='.'):
+        self.target_filename = target_filename
+        self.mesh_dir = mesh_dir
+        
+    def preamble(self, options):
+        self.target_file = open(self.target_filename, 'w')
+        self.target_file.write('tk')
+        # keep track of meshes we've already made rules for
+        self.register = []
+
+    def __call__(self, options):
+        if options.mesh_name not in self.register:
+            # tk
+            self.target_file.write('tk')
+            self.register.append(options.mesh_name)
+            msg += '\nincluded ' + options.mesh_name
+            
+    def postamble(self, options):
+        self.target_file.close()

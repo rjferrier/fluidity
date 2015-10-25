@@ -1,23 +1,29 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE testproblem SYSTEM "regressiontest.dtd">
-{# <!-- This template is used by options_iteration_extended_utilities.py --> #}
+{# <!-- This template is used by opiter_extended_utils.py --> #}
 <testproblem>
   <name>{{ problem.problem_name }}</name>
   <owner userid="{{ problem.user_id }}"/>
   <tags>{{ problem.simulation_options_extension }}</tags>
   <problem_definition length="{{ problem.test_length }}" nprocs="1">
     <command_line>
-startdir=$PWD
-cd {{ mesh_dir }}
-{{ '\n'.join(mesh_commands) }}
-cd $startdir
-cd {{ simulation_dir }}
-{{ '\n'.join(simulation_commands) }}
-cd $startdir
+{% if problem.simulation_dir %}
+cd {{ problem.simulation_dir }}
+{% endif %}
+{% for sim in simulations %}
+{{ sim.args|join(' ')}}
+{% endfor %}
     </command_line>
   </problem_definition>
+  
   <variables>
-    
+    {% for sim in simulations %}
+    <variable name="stat_{{ sim.name }}" language="python">
+from fluidity_tools import stat_parser
+stat_{{ sim.name }} = stat_parser('{% if problem.simulation_dir %}{{ problem.simulation_dir }}/{% endif %}{{ sim.name }}.stat')
+    </variable>
+    {% endfor %}
+
     {% for var in abscissa_variables %}
     <variable name="{{ var.label }}" language="python">
 {{ var.label }} = {{ var.value }}
@@ -26,10 +32,8 @@ cd $startdir
 
     {% for var in error_variables %}
     <variable name="{{ var.label }}" language="python">
-      from fluidity_tools import stat_parser
-stat = stat_parser('{{ simulation_dir }}/{{ var.simulation_name }}.stat')
 try:
-    {{ var.label }} = stat['{{ var.phase_name }}']['{{ var.name }}']['{{ var.calculation }}'][{{ var.timestep_index }}]
+    {{ var.label }} = stat_{{ var.simulation_name }}['{{ var.phase_name }}']['{{ var.name }}']['{{ var.calculation }}'][{{ var.timestep_index }}]
 except KeyError:
     print '''
 Expected to find {{ var.phase_name }}::{{ var.name }} in the stat file; 
@@ -40,12 +44,6 @@ has this been defined in the options file?'''
   </variables>
   
   <pass_tests>
-    <test name="Solvers converged" language="python">
-import os
-files = os.listdir('{{ simulation_dir }}')
-assert("matrixdump" not in files and "matrixdump.info" not in files)
-    </test>
-
     {% macro test_header(var) %}
 <test name="{{ var.label }} &{{ var.rel_op }}; {{ var.threshold }}" language="python">
     {% endmacro %}
@@ -66,8 +64,7 @@ except AssertionError:
 
     {% for var in rate_variables %}
     {% if var.threshold %}
-    {{ test_header(var) }}
-import numpy
+    {{ test_header(var) }}import numpy
 current_abscissa = float(abscissa_{{ var.key }})
 current_error = numpy.abs(error_{{ var.key }})
 previous_abscissa = float(abscissa_{{ var.key_prev }})
@@ -75,7 +72,6 @@ previous_error = numpy.abs(error_{{ var.key_prev }})
 {{ var.label }} = \
     {{ var.sign }}numpy.log(current_error/previous_error) / \
     numpy.log(current_abscissa/previous_abscissa)
-
 {{ test_footer(var) }}
     {% endif %}
     {% endfor %}
