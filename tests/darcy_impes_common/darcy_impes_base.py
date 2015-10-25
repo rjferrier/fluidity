@@ -184,9 +184,6 @@ class threedim:
     dim_number = 3
     geometry = "cuboid"
     wall_ids = (3, 4, 5, 6)
-    
-# dims = OptionsArray('dim', [onedim, twodim, threedim],
-#                     names=['1d', '2d', '3d'])
 
 
 #----------------------------------------------------------------------
@@ -198,9 +195,8 @@ class curved:
     def geometry_prefix(self):
         # can't have curved 1D meshes
         return 'curved_' if self.dim_number > 1 else ''
-    
-# boundary_types = OptionsArray('boundary_type', [straight, curved])
 
+    
 #----------------------------------------------------------------------
 
 class reg:
@@ -208,10 +204,8 @@ class reg:
     
 class irreg:
     have_regular_mesh = False
-    
-# mesh_types = OptionsArray('mesh_type', [regular, irregular])
-    
 
+    
 #----------------------------------------------------------------------
 
 class corey:
@@ -222,7 +216,6 @@ class quadratic:
     rel_perm_relation_name = 'PowerLaw'
     rel_perm_relation_exponents = (2, 2)
 
-# rel_perms = OptionsArray('mesh_type', [regular, irregular])
 
 #----------------------------------------------------------------------
 
@@ -235,7 +228,7 @@ class modrpupwind_satfe:
     saturation_face_value_limiter = "Sweby"
     rel_perm_face_value = "RelPermOverSatUpwind"
 
-face_vals = OptionsArray('face_val', [rpupwind, modrpupwind_satfe])
+# face_vals = OptionsArray('face_val', [rpupwind, modrpupwind_satfe])
 
 
 #----------------------------------------------------------------------

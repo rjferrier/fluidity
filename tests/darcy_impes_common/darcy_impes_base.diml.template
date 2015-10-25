@@ -2,9 +2,7 @@
 <darcy_impes_options>
   <simulation_name>
     <string_value lines="1">{{ simulation_name }}</string_value>
-    <comment>{% block intro %}Saturation sources have been computed using SymPy.  Velocity divergence minus saturation source should sum to zero over the phases:
-{{ divergence_check }}{% endblock %}
-</comment>
+    <comment>{% block intro_comment_block %}{% endblock %}</comment>
   </simulation_name>
   <geometry>
     <dimension>
@@ -55,27 +53,7 @@
         </stat>
       </from_mesh>
     </mesh>
-    {% if saturation_sources %}
-    <mesh name="SaturationSourceMesh">
-      <from_mesh>
-        <mesh name="CoordinateMesh"/>
-        <mesh_shape>
-          <polynomial_degree>
-            <integer_value rank="0">1</integer_value>
-          </polynomial_degree>
-          <element_type>
-            <string_value>lagrangian</string_value>
-          </element_type>
-        </mesh_shape>
-        <mesh_continuity>
-          <string_value>continuous</string_value>
-        </mesh_continuity>
-        <stat>
-          <exclude_from_stat/>
-        </stat>
-      </from_mesh>
-    </mesh>
-    {% endif %}
+    {% block other_mesh_blocks %}{% endblock %}
     <quadrature>
       <degree>
         <integer_value rank="0">1</integer_value>
@@ -152,28 +130,26 @@
           </max_iterations>
           <never_ignore_solver_failures/>
         </solver>
+	{% block pressure1_ic_block %}
         <initial_condition name="WholeMesh">
-          <python>
-            <string_value lines="20" type="code" language="python">def val(X, t):
-  from numpy import sqrt, pi, cos, sin, exp
-  return {{ pressures[0]|format_sympy }}</string_value>
-          </python>
+          <constant>
+            <real_value rank="0">0</real_value>
+          </constant>
         </initial_condition>
-        <boundary_conditions name="pressure1">
+	{% endblock %}
+	{% block pressure1_bc_block %}
+        <boundary_conditions name="outlet_pressure">
           <surface_ids>
-            <integer_value shape="1" rank="1">{{ pressure1_dirichlet_boundary_ids|join(' ') }}</integer_value>
+            <integer_value shape="1" rank="1">{{ outlet_id }}</integer_value>
           </surface_ids>
           <type name="dirichlet">
             <apply_strongly/>
-	    {% block pressure1_bc %}
-	    <python>
-              <string_value lines="20" type="code" language="python">def val(X, t):
-  from numpy import sqrt, pi, cos, sin, exp
-  return {{ pressures[0]|format_sympy }}</string_value>
-  	    </python>
-	    {% endblock %}
+            <constant>
+              <real_value rank="0">0</real_value>
+            </constant>
           </type>
         </boundary_conditions>
+	{% endblock %}
         <stat>
           <include_cv_stats/>
         </stat>
@@ -193,23 +169,7 @@
 	  {% endif %}
         </face_value>
 	{% endif %}
-	{% if saturation_sources[0] %}
-        <scalar_field name="Source" rank="0">
-          <prescribed>
-            <mesh name="SaturationSourceMesh"/>
-            <value name="WholeMesh">
-              <python>
-                <string_value type="code" lines="20" language="python">def val(X, t):
-  from numpy import sqrt, pi, cos, sin, exp
-  return {{ saturation_sources[0]|format_sympy }}</string_value>
-              </python>
-            </value>
-            <stat>
-              <include_cv_stats/>
-            </stat>
-          </prescribed>
-        </scalar_field>
-	{% endif %}
+	{% block saturation1_source_block %}{% endblock %}
         <convergence>
           <include_in_convergence/>
         </convergence>
@@ -275,27 +235,7 @@
       <diagnostic>
         <mesh name="PressureMesh"/>
         <algorithm name="Internal"/>
-	{% macro velocity_bcs(phase_num, normal_velocity_dirichlet_boundary_ids) %}
-	{% for boundary_id in normal_velocity_dirichlet_boundary_ids %}
-  	<boundary_conditions name="velocity{{ phase_num }}_boundary{{ boundary_id }}">
-          <surface_ids>
-            <integer_value shape="1" rank="1">{{ boundary_id }}</integer_value>
-          </surface_ids>
-	  {% if boundary_normal_darcy_velocities[phase_num - 1][boundary_id - 1] == 0 %}
-          <type name="no_normal_flow"/>
-	  {% else %}
-          <type name="prescribed_normal_flow">
-            <python>
-              <string_value type="code" lines="20" language="python">def val(X, t):
-  from numpy import sqrt, pi, cos, sin, exp
-  return {{ boundary_normal_darcy_velocities[phase_num - 1][boundary_id - 1]|format_sympy }}</string_value>
-            </python>
-          </type>
-	  {% endif %}
-        </boundary_conditions>
-	{% endfor %}
-	{% endmacro %}
-	{{ velocity_bcs(1, normal_velocity1_dirichlet_boundary_ids) }}
+	{% block velocity1_bc_block %}{% endblock %}
         <stat>
           <include_cv_stats/>
         </stat>
@@ -392,40 +332,7 @@
         <consistent_interpolation/>
       </diagnostic>
     </vector_field>
-    {% macro error_variables(this_phase) %}
-    {% for ef in examined_fields %}
-    {% if ef.phase_name == this_phase %}
-    <scalar_field name="Analytical{{ ef.variable_name }}Solution">
-      <prescribed>
-        <mesh name="PressureMesh"/>
-        <value name="WholeMesh">
-          <python>
-            <string_value lines="20" type="code" language="python">def val(X, t):
-  from numpy import sqrt, pi, cos, sin, exp
-  return {{ ef.choose_solution(pressures, saturations)|format_sympy }}</string_value>
-          </python>
-        </value>
-        <stat>
-          <include_cv_stats/>
-        </stat>
-      </prescribed>
-    </scalar_field>
-    <scalar_field name="{{ ef.variable_name }}AbsError">
-      <diagnostic>
-        <mesh name="{% if ef.variable_name == 'Pressure' %}PressureMesh{% else %}CoordinateMesh{% endif %}"/>
-        <algorithm source_field_2_type="scalar" name="scalar_difference" source_field_1_name="{{ ef.variable_name }}" source_field_2_name="Analytical{{ ef.variable_name }}Solution" material_phase_support="single" source_field_1_type="scalar">
-          <absolute_difference/>
-        </algorithm>
-        <stat>
-          <include_cv_stats/>
-        </stat>
-        <consistent_interpolation/>
-      </diagnostic>
-    </scalar_field>
-    {% endif %}
-    {% endfor %}
-    {% endmacro %}
-    {{ error_variables('Phase1') }}
+    {% block other_fields_phase1_block %}{% endblock %}
   </material_phase>
   <material_phase name="Phase2">
     <scalar_field name="Pressure" rank="0">
@@ -438,68 +345,18 @@
         <consistent_interpolation/>
       </diagnostic>
     </scalar_field>
-    {% if capillary_pressure_wrt_saturation %}
-    <scalar_field name="CapilliaryPressure" rank="0">
-      <diagnostic>
-        <mesh name="PressureMesh"/>
-        <algorithm name="scalar_python_diagnostic" material_phase_support="single">
-          <string_value type="code" lines="20" language="python">
-S2_field = state.scalar_fields["Saturation"]
-Sr2 = {{ residual_saturations[1] }}
-for n in range(field.node_count):
-   S2 = S2_field.node_val(n)
-   pc = {{ capillary_pressure_wrt_saturation|format_sympy }}
-   # a minus sign is needed because pressure2 appears to be computed
-   # in the source code as pressure1 + capillary_pressure
-   field.set(n, -pc)</string_value>
-        </algorithm>
-        <stat>
-          <include_cv_stats/>
-        </stat>
-        <consistent_interpolation/>
-      </diagnostic>
-    </scalar_field>
-    {% endif %}
+    {% block capillary_pressure_block %}{% endblock %}
     <scalar_field name="Saturation" rank="0">
       <prognostic>
         <mesh name="PressureMesh"/>
+	{% block saturation2_ic_block %}
         <initial_condition name="WholeMesh">
-          <python>
-            <string_value lines="20" type="code" language="python">def val(X, t):
-  from numpy import sqrt, pi, cos, sin, exp
-  return {{ saturations[1]|format_sympy }}</string_value>
-          </python>
+          <constant>
+            <real_value rank="0">{{ opt.initial_saturation2 }}</real_value>
+          </constant>
         </initial_condition>
-	{% if saturation2_dirichlet_boundary_ids %}
-        <boundary_conditions name="saturation2">
-          <surface_ids>
-            <integer_value shape="1" rank="1">{{ saturation2_dirichlet_boundary_ids|join(' ') }}</integer_value>
-          </surface_ids>
-          <type name="dirichlet">
-            <apply_strongly/>
-  	    <python>
-              <string_value lines="20" type="code" language="python">def val(X, t):
-  from numpy import sqrt, pi, cos, sin, exp
-  return {{ saturations[1]|format_sympy }}</string_value>
-  	    </python>
-          </type>
-        </boundary_conditions>
-	{% endif %}
-        <scalar_field name="Source" rank="0">
-          <prescribed>
-            <mesh name="SaturationSourceMesh"/>
-            <value name="WholeMesh">
-              <python>
-                <string_value lines="20" type="code" language="python">def val(X, t):
-  from numpy import sqrt, pi, cos, sin, exp
-  return {{ saturation_sources[1]|format_sympy }}</string_value>
-              </python>
-            </value>
-            <stat>
-              <include_cv_stats/>
-            </stat>
-          </prescribed>
-        </scalar_field>
+	{% endblock %}
+	{% block saturation2_bc_block %}{% endblock %}
         <convergence>
           <include_in_convergence/>
         </convergence>
@@ -551,7 +408,7 @@ for n in range(field.node_count):
       <diagnostic>
         <mesh name="PressureMesh"/>
         <algorithm name="Internal"/>
-	{{ velocity_bcs(2, normal_velocity2_dirichlet_boundary_ids) }}
+	{% block velocity2_bc_block %}{% endblock %}
         <stat>
           <include_cv_stats/>
         </stat>
@@ -588,7 +445,7 @@ for n in range(field.node_count):
         <consistent_interpolation/>
       </diagnostic>
     </scalar_field>
-    {{ error_variables('Phase2') }}
+    {% other_fields_phase2_block %}
   </material_phase>
   <porous_media>
     <scalar_field name="Porosity">

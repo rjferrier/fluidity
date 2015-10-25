@@ -1,15 +1,12 @@
 {% extends "darcy_impes_base.diml.template" %}
 
 {% block intro_comment_block %}
-<comment>Saturation sources have been computed using SymPy.  Velocity divergence minus saturation source should sum to zero over the phases:
+<comment>
+Analytical Phase 1 pressure: {{ pressures[0] }}
+Analytical Phase 2 saturation: {{ saturations[1] }}
+Saturation sources have been computed using SymPy.  Velocity divergence minus saturation source should sum to zero over the phases:
 {{ divergence_check }}
 </comment>
-<!-- p1: {{pressures[0]|format_sympy}} -->
-<!-- p2: {{pressures[1]|format_sympy}} -->
-<!-- S1: {{saturations[0]|format_sympy}} -->
-<!-- S2: {{saturations[1]|format_sympy}} -->
-<!-- QS1: {{saturation_sources[0]|format_sympy}} -->
-<!-- QS2: {{saturation_sources[1]|format_sympy}} -->
 {% endblock %}
 
 {% block other_mesh_blocks %}
@@ -38,7 +35,7 @@
 <python>
   <string_value lines="20" type="code" language="python">def val(X, t):
   from numpy import sqrt, pi, cos, sin, exp
-  return {{ field_function|format_sympy }}</string_value>
+  return {{ expression|format_sympy }}</string_value>
 </python>
 {% endmacro %}
 
@@ -55,7 +52,7 @@
   </surface_ids>
   <type name="dirichlet">
     <apply_strongly/>
-    {{ expression }}
+    {{ expression|format_sympy }}
   </type>
 </boundary_conditions>
 {% endmacro %}
@@ -88,15 +85,48 @@
 {% endmacro %}
 
 {% block saturation1_source_block %}
-{{ saturation_source(1) }}
+{{ saturation_sources[0] }}
 {% endblock %}
 
 {% block saturation2_source_block %}
-{{ saturation_source(2) }}
+{{ saturation_sources[1] }}
 {% endblock %}
 
 
-{% block examined_field_block %}
+{% macro velocity_bcs(phase_num, normal_velocity_dirichlet_boundary_ids) %}
+{% for boundary_id in normal_velocity_dirichlet_boundary_ids %}
+<boundary_conditions name="velocity{{ phase_num }}_boundary{{ boundary_id }}">
+  <surface_ids>
+    <integer_value shape="1" rank="1">{{ boundary_id }}</integer_value>
+  </surface_ids>
+  {% if boundary_normal_darcy_velocities[phase_num - 1][boundary_id - 1] == 0 %}
+  <type name="no_normal_flow"/>
+  {% else %}
+  <type name="prescribed_normal_flow">
+    <python>
+      <string_value type="code" lines="20" language="python">
+def val(X, t):
+  from numpy import sqrt, pi, cos, sin, exp
+  return {{ boundary_normal_darcy_velocities[phase_num - 1][boundary_id - 1]|format_sympy }}</string_value>
+    </python>
+  </type>
+  {% endif %}
+</boundary_conditions>
+{% endfor %}
+{% endmacro %}
+
+{% block velocity1_bc_block %}
+{{ velocity_bcs(1, normal_velocity1_dirichlet_boundary_ids) }}
+{% endblock %}
+
+{% block velocity2_bc_block %}
+{{ velocity_bcs(2, normal_velocity2_dirichlet_boundary_ids) }}
+{% endblock %}
+
+
+{% macro error_variables(this_phase) %}
+{% for ef in examined_fields %}
+{% if ef.phase_name == this_phase %}
 <scalar_field name="Analytical{{ ef.variable_name }}Solution">
   <prescribed>
     <mesh name="PressureMesh"/>
@@ -104,7 +134,7 @@
       <python>
         <string_value lines="20" type="code" language="python">def val(X, t):
   from numpy import sqrt, pi, cos, sin, exp
-  return {{ ef.solution(pressures, saturations)|format_sympy }}</string_value>
+  return {{ ef.choose_solution(pressures, saturations)|format_sympy }}</string_value>
       </python>
     </value>
     <stat>
@@ -124,6 +154,17 @@
     <consistent_interpolation/>
   </diagnostic>
 </scalar_field>
+{% endif %}
+{% endfor %}
+{% endmacro %}
+
+
+{% block other_fields_phase1_block %}
+{{ error_variables('Phase1') }}
+{% endblock %}
+
+{% block other_fields_phase2_block %}
+{{ error_variables('Phase2') }}
 {% endblock %}
 
 
@@ -161,9 +202,3 @@ for n in range(field.node_count):
 {{ boundary_condition('saturation2', saturation2_dirichlet_boundary_ids, saturations[1]) }}
 {% endblock %}
 
-
-{% block darcy_velocity2_bc_block %}
-{% for boundary_id in normal_velocity2_dirichlet_boundary_ids %}
-{{ boundary_condition('velocity2_boundary' + boundary_id, [boundary_id], boundary_normal_darcy_velocities[1][boundary_id - 1]) }}
-{% endfor %}
-{% endblock %}
